@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Social Pulse Globe — Real-Time Social Media World Map</title>
+  <meta name="description" content="Interactive 3D world map showing real-time social media usage statistics by country" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/globe.gl@2.27.2/dist/globe.gl.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="intro-overlay" aria-hidden="true">
+  <div class="intro-title">SOCIAL PULSE GLOBE</div>
+  <div class="intro-subtitle">Real-Time World Social Media Intelligence</div>
+</div>
+<canvas id="star-canvas" aria-hidden="true"></canvas>
+<div id="globe-container" role="img" aria-label="3D interactive globe showing social media usage by country"></div>
+<div id="globe-tooltip" role="tooltip"></div>
+<div id="reticle" aria-hidden="true">
+  <div class="ret-corner ret-tl"></div>
+  <div class="ret-corner ret-tr"></div>
+  <div class="ret-corner ret-bl"></div>
+  <div class="ret-corner ret-br"></div>
+  <div class="ret-dot"></div>
+  <div class="ret-ring"></div>
+  <div class="ret-scanline"></div>
+</div>
+<header>
+  <div class="header-logo">
+    <div class="logo-icon" aria-hidden="true" style="background:linear-gradient(135deg,#22D3EE,#0EA5E9)">
+      <svg width="28" height="28" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="11" cy="11" r="9" stroke="currentColor" stroke-width="1.4"/>
+        <path d="M11 2C11 2 7.5 6.5 7.5 11C7.5 15.5 11 20 11 20" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M11 2C11 2 14.5 6.5 14.5 11C14.5 15.5 11 20 11 20" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M2.5 8.5H19.5M2.5 13.5H19.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        <circle cx="11" cy="11" r="1.8" fill="currentColor"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Social Pulse Globe</h1>
+      <div class="header-subtitle">Real-Time Social Media Intelligence · 50+ Countries</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div class="timestamp">
+      <div class="pulse-dot"></div>
+      <span>Updated: <strong id="last-updated-text">—</strong></span>
+    </div>
+    <button id="refresh-btn" title="Refresh data" aria-label="Refresh data"><span class="icon" aria-hidden="true">↻</span> Refresh</button>
+    <button id="war-room-btn" title="Enter WAR ROOM fullscreen mode"><span class="wr-btn-icon">☠</span> WAR ROOM</button>
+    <button id="vt-toggle-btn" title="Toggle Viral Tracker arcs" aria-pressed="false">⬡ VIRAL</button>
+    <div id="live-indicator" class="live-indicator" aria-label="Live breaking news" aria-hidden="true">
+      <span class="live-dot"></span><span class="live-label">LIVE</span>
+    </div>
+  </div>
+</header>
+<div id="war-room" class="war-room-overlay" aria-hidden="true">
+  <div class="wr-scanlines" aria-hidden="true"></div>
+  <aside class="wr-dashboard">
+    <div class="wr-header">
+      <div class="wr-header-left">
+        <div class="wr-logo">☠ WAR ROOM</div>
+        <div class="wr-subline">GLOBAL TERRITORY DOMINANCE SYSTEM</div>
+      </div>
+      <button id="wr-exit-btn" class="wr-exit-btn" title="Exit WAR ROOM">✕ EXIT</button>
+    </div>
+    <section class="wr-section"><div class="wr-section-label">◎ CURRENTLY DOMINATING</div><div id="wr-dominator"></div></section>
+    <section class="wr-section wr-scoreboard-wrap"><div class="wr-section-label">⚡ BATTLE SCOREBOARD — FIGHTER HP</div><div id="wr-scoreboard"></div></section>
+    <section class="wr-section wr-feed-wrap"><div class="wr-section-label">▶ TERRITORY FEED — LIVE</div><div id="wr-feed"></div></section>
+    <div class="wr-section wr-predict-trigger"><button id="bp-open-btn" class="bp-open-btn">🔮 NEXT BATTLE PREDICTION</button></div>
+  </aside>
+</div>
+<div id="bp-panel" class="bp-panel" aria-hidden="true">
+  <div class="bp-panel-header"><span class="bp-panel-title">🔮 NEXT BATTLE PREDICTION</span><button id="bp-close-btn" class="bp-panel-close">✕</button></div>
+  <div class="bp-key-row"><input id="bp-key-input" class="bp-key-input" type="password" placeholder="Claude API key (optional — leave blank for local AI)" autocomplete="off"><button id="bp-run-btn" class="bp-run-btn">⚡ ANALYZE</button></div>
+  <div id="bp-status" class="bp-status" style="display:none"></div>
+  <div id="bp-cards" class="bp-cards"></div>
+</div>
+<nav id="platform-toolbar" role="toolbar" aria-label="Filter globe by platform"></nav>
+<aside id="stats-bar" aria-label="Global statistics">
+  <div class="stat-card"><div class="val">5.24B</div><div class="lbl">Global Users</div></div>
+  <div class="stat-card"><div class="val">63.7%</div><div class="lbl">World Penetration</div></div>
+  <div class="stat-card"><div class="val">6h 37m</div><div class="lbl">Daily Avg. Use</div></div>
+</aside>
+<div id="legend" aria-label="Map colour legend">
+  <div class="legend-title">Social Media Users</div>
+  <div class="legend-bar"></div>
+  <div class="legend-labels"><span>Low</span><span>Medium</span><span>High</span></div>
+</div>
+<div id="click-hint" aria-hidden="true">◄ Click any country to explore ►</div>
+<div id="panel-overlay" aria-hidden="true"></div>
+<aside id="side-panel" role="complementary" aria-label="Country social media details">
+  <div class="panel-header">
+    <div class="panel-header-left"><img id="panel-flag" src="" alt="" width="52" /><div id="panel-country">—</div></div>
+    <button id="panel-close" aria-label="Close panel" title="Close">✕</button>
+  </div>
+  <div class="panel-tabs" role="tablist">
+    <button class="ptab ptab--active" data-tab="stats" role="tab">📊 Stats</button>
+    <button class="ptab" data-tab="trending" role="tab">🔥 Trending</button>
+    <button class="ptab" data-tab="buzz" role="tab">💬 Buzz</button>
+    <button class="ptab" data-tab="platform" role="tab">📰 Platform</button>
+  </div>
+  <div id="tab-stats" class="panel-tab-pane panel-body active">
+    <div id="panel-total"></div>
+    <div><div class="panel-section-title">Platform Breakdown</div><div class="chart-wrapper"><canvas id="panel-chart"></canvas></div></div>
+    <div><div class="panel-section-title">Trending Topics</div><div id="panel-trending"></div></div>
+    <div id="ai-insight-section"><div class="panel-section-title ai-insight-title">🤖 AI Insight<span id="ai-insight-badge" class="ai-badge">claude</span></div><div id="ai-insight-body"></div></div>
+  </div>
+  <div id="tab-trending" class="panel-tab-pane">
+    <div id="tn-loading" class="tab-loading">Fetching live news…</div>
+    <div id="tn-list" class="tn-list"></div>
+  </div>
+  <div id="tab-buzz" class="panel-tab-pane">
+    <div class="tab-section-hdr">🔍 Trending Searches</div>
+    <div id="buzz-pills" class="buzz-pills"></div>
+    <div class="tab-section-hdr" style="margin-top:14px">📈 Search Surge (Sparklines)</div>
+    <div id="buzz-sparklines" class="buzz-sparklines"></div>
+  </div>
+  <div id="tab-platform" class="panel-tab-pane">
+    <div id="pn-loading" class="tab-loading">Loading platform posts…</div>
+    <div id="pn-list" class="tn-list"></div>
+  </div>
+</aside>
+<div id="breaking-popup" aria-hidden="true"><button id="breaking-popup-close">✕</button><div id="breaking-popup-inner"></div></div>
+<div id="kill-feed-wrap" aria-label="Kill feed" aria-live="polite">
+  <div class="kf-header">☠ KILL FEED</div>
+  <div id="kill-feed"></div>
+</div>
+<div id="kill-streak-flash" class="kill-streak-flash" aria-live="assertive"></div>
+<div id="vt-panel" class="vt-panel" aria-label="Viral tracker" aria-hidden="true">
+  <div class="vt-panel-header"><span class="vt-title">⬡ VIRAL TRACKER</span><button id="vt-close" class="vt-close-btn" title="Close">✕</button></div>
+  <div class="vt-desc">Animated arcs showing how viral content migrated between countries (2020–2026). Click a trend to highlight its path.</div>
+  <div id="vt-list" class="vt-list"></div>
+</div>
+<div id="vt-arc-popup" class="vt-arc-popup" aria-hidden="true"></div>
+<!-- ticker removed — replaced by Live Feed panel -->
+<div id="toast" role="status" aria-live="polite"></div>
+  <script src="js/data.js"></script>
+  <script src="js/stars.js"></script>
+  <script src="js/globe.js"></script>
+  <script src="js/panel.js"></script>
+  <script src="js/ticker.js"></script>
+  <script src="js/refresh.js"></script>
+  <script src="js/switcher.js"></script>
+  <script src="js/ai-insight.js"></script>
+  <script src="js/historical-data.js"></script>
+  <script src="js/war-room.js"></script>
+  <script src="js/timeline-scrubber.js"></script>
+  <script src="js/battle-prediction.js"></script>
+  <script src="js/kill-feed.js"></script>
+  <script src="js/viral-tracker.js"></script>
+  <script src="js/posts-counter.js"></script>
+  <script src="js/activity-pulse.js"></script>
+  <script src="js/trending-sidebar.js"></script>
+  <script src="js/breaking-news.js"></script>
+  <script src="js/live-feed.js"></script>
+
+<!-- ── Live Feed Panel ─────────────────────────── -->
+<div id="live-feed-panel" aria-label="Live updates feed" role="log" aria-live="polite">
+  <div class="lf-header">
+    <div class="lf-live-dot"></div>
+    <span class="lf-title">Live Feed</span>
+    <span class="lf-count" id="lf-count">—</span>
+  </div>
+  <div id="lf-items"></div>
+</div>
+</body>
+</html>

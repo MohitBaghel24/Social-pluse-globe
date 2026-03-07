@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Social Pulse Globe — Real-Time Social Media World Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+/* ════════════════════════════════════════════════
+   RESET & TOKENS
+════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:       #03050e;
+  --gold:     #c9ff3b;
+  --cyan:     #3be8ff;
+  --danger:   #ff4f6d;
+  --violet:   #9f6fff;
+  --panel:    rgba(3,5,14,.55);
+  --border:   rgba(255,255,255,.06);
+  --text:     #e8eeff;
+  --muted:    rgba(232,238,255,.38);
+  --ff-display: 'Bricolage Grotesque', sans-serif;
+  --ff-mono:    'DM Mono', monospace;
+  --radius:   14px;
+}
+
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);cursor:none}
+
+/* ── SVG noise filter ── */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='.025'/%3E%3C/svg%3E");
+  opacity:.025
+}
+
+/* ── Grid bg ── */
+body::after{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(201,255,59,.028) 1px,transparent 1px),
+                   linear-gradient(90deg,rgba(201,255,59,.028) 1px,transparent 1px);
+  background-size:72px 72px
+}
+
+/* ── Vignette ── */
+#vignette{
+  position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 50%,transparent 38%,rgba(3,5,14,.84) 100%)
+}
+
+/* ── Animated blur blobs ── */
+.blob{position:fixed;z-index:1;pointer-events:none;border-radius:50%;filter:blur(140px);animation:float 18s ease-in-out infinite}
+#blob-gold{width:560px;height:440px;top:-120px;left:-140px;background:rgba(201,255,59,.07);animation-delay:0s}
+#blob-cyan{width:480px;height:380px;bottom:-100px;right:-100px;background:rgba(59,232,255,.07);animation-delay:-6s}
+#blob-violet{width:400px;height:400px;top:40%;left:40%;background:rgba(159,111,255,.05);animation-delay:-12s}
+
+@keyframes float{
+  0%,100%{transform:translate(0,0) scale(1)}
+  33%{transform:translate(30px,-20px) scale(1.04)}
+  66%{transform:translate(-20px,25px) scale(.96)}
+}
+
+/* ════════════════════════════════════════════════
+   LAYOUT GRID
+════════════════════════════════════════════════ */
+#app{
+  position:relative;z-index:2;
+  display:grid;
+  grid-template-rows:64px 1fr 40px;
+  grid-template-columns:260px 1fr 300px;
+  width:100vw;height:100vh
+}
+
+/* ════════════════════════════════════════════════
+   CUSTOM CURSOR
+════════════════════════════════════════════════ */
+#cur-dot{
+  position:fixed;z-index:9999;pointer-events:none;
+  width:6px;height:6px;border-radius:50%;background:var(--gold);
+  transform:translate(-50%,-50%);mix-blend-mode:difference;
+  transition:width .15s,height .15s
+}
+#cur-ring{
+  position:fixed;z-index:9998;pointer-events:none;
+  width:28px;height:28px;border-radius:50%;
+  border:1px solid var(--gold);
+  transform:translate(-50%,-50%);mix-blend-mode:difference;
+  transition:width .2s,height .2s
+}
+body.hover-active #cur-dot{width:12px;height:12px}
+body.hover-active #cur-ring{width:44px;height:44px}
+
+/* ════════════════════════════════════════════════
+   HEADER
+════════════════════════════════════════════════ */
+#header{
+  grid-column:1/-1;grid-row:1;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;
+  background:rgba(3,5,14,.7);
+  backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);
+  z-index:50
+}
+
+.logo{display:flex;align-items:center;gap:10px}
+.logo-mark{
+  width:32px;height:32px;border-radius:8px;
+  background:var(--gold);display:flex;align-items:center;justify-content:center;
+  font-family:var(--ff-display);font-size:14px;font-weight:800;color:#03050e
+}
+.logo-text{font-family:var(--ff-display);font-size:15px;font-weight:700;letter-spacing:.06em}
+.logo-text span{color:var(--gold)}
+.logo-sub{font-family:var(--ff-mono);font-size:.6rem;color:var(--muted);letter-spacing:.28em;text-transform:uppercase;margin-top:1px}
+
+.hdr-center{display:flex;align-items:center;gap:24px}
+.hdr-stat{text-align:center}
+.hdr-stat .val{font-family:var(--ff-display);font-size:13px;font-weight:700;color:var(--gold)}
+.hdr-stat .lbl{font-family:var(--ff-mono);font-size:.52rem;color:var(--muted);letter-spacing:.2em;text-transform:uppercase}
+.hdr-divider{width:1px;height:28px;background:var(--border)}
+
+.hdr-right{display:flex;align-items:center;gap:16px}
+#live-clock{font-family:var(--ff-mono);font-size:.72rem;color:var(--cyan);letter-spacing:.18em}
+.live-pill{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,79,109,.12);border:1px solid rgba(255,79,109,.3);
+  border-radius:20px;padding:4px 12px;
+  font-family:var(--ff-mono);font-size:.6rem;color:var(--danger);letter-spacing:.2em
+}
+.live-pill::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--danger);animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ════════════════════════════════════════════════
+   LEFT PANEL
+════════════════════════════════════════════════ */
+#left-panel{
+  grid-column:1;grid-row:2;
+  background:var(--panel);
+  backdrop-filter:blur(12px);
+  border-right:1px solid var(--border);
+  overflow-y:auto;overflow-x:hidden;
+  display:flex;flex-direction:column;gap:0;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.12) transparent
+}
+#left-panel::-webkit-scrollbar{width:2px}
+#left-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:1px}
+
+.lp-section{padding:18px 18px 14px;border-bottom:1px solid var(--border)}
+.section-label{
+  font-family:var(--ff-mono);font-size:.58rem;color:var(--muted);
+  letter-spacing:.32em;text-transform:uppercase;margin-bottom:12px
+}
+
+/* Platform switcher */
+#platform-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.plat-btn{
+  display:flex;align-items:center;gap:7px;
+  padding:8px 10px;border-radius:9px;border:1px solid rgba(255,255,255,.07);
+  background:rgba(255,255,255,.03);cursor:none;
+  transition:background .2s,border-color .2s,box-shadow .2s;
+  font-family:var(--ff-display);font-size:.72rem;font-weight:500
+}
+.plat-btn:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.14)}
+.plat-btn.active{border-color:var(--pc,.5);box-shadow:0 0 12px var(--pc-glow,transparent)}
+.plat-icon{width:16px;height:16px;border-radius:4px;flex-shrink:0}
+.plat-name{color:var(--text);font-size:.68rem}
+.plat-users{font-family:var(--ff-mono);font-size:.56rem;color:var(--muted);margin-left:auto}
+
+/* Mini stats */
+#mini-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mini-stat{
+  background:rgba(255,255,255,.03);border:1px solid var(--border);
+  border-radius:10px;padding:10px 12px
+}
+.mini-stat .val{font-family:var(--ff-display);font-size:1.05rem;font-weight:700;color:var(--gold)}
+.mini-stat .lbl{font-family:var(--ff-mono);font-size:.52rem;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;margin-top:2px}
+
+/* Posts per second */
+#pps-block{display:flex;align-items:center;gap:10px}
+#pps-num{font-family:var(--ff-display);font-size:1.6rem;font-weight:800;color:var(--gold);transition:color .3s}
+.pps-lbl{font-family:var(--ff-mono);font-size:.58rem;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;line-height:1.4}
+.pps-bar{
+  height:2px;background:rgba(255,255,255,.06);border-radius:1px;margin-top:8px;overflow:hidden
+}
+.pps-bar-fill{
+  height:100%;width:60%;background:var(--gold);border-radius:1px;
+  animation:ppsPulse 0.75s ease-in-out infinite alternate
+}
+@keyframes ppsPulse{from{opacity:.5}to{opacity:1}}
+
+/* War mini scoreboard */
+.war-row{
+  display:flex;align-items:center;gap:8px;padding:6px 0;
+  border-bottom:1px solid rgba(255,255,255,.04)
+}
+.war-row:last-child{border-bottom:none}
+.war-rank{font-family:var(--ff-mono);font-size:.6rem;color:var(--muted);width:14px;text-align:center}
+.war-icon{width:18px;height:18px;border-radius:4px;flex-shrink:0}
+.war-name{font-family:var(--ff-display);font-size:.7rem;font-weight:500;flex:1}
+.war-hp{flex:1;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden}
+.war-hp-fill{height:100%;border-radius:2px;transition:width .6s}
+.war-change{font-family:var(--ff-mono);font-size:.58rem;width:32px;text-align:right}
+.war-change.up{color:#4ade80}
+.war-change.dn{color:var(--danger)}
+
+/* ════════════════════════════════════════════════
+   CENTER — GLOBE
+════════════════════════════════════════════════ */
+#center{
+  grid-column:2;grid-row:2;
+  position:relative;overflow:hidden;
+  display:flex;align-items:center;justify-content:center
+}
+
+#globe-canvas{position:absolute;inset:0;width:100%;height:100%}
+
+/* Scan rings */
+.scan-ring{
+  position:absolute;border-radius:50%;pointer-events:none;
+  border:1px solid rgba(201,255,59,.045)
+}
+#sr1{
+  width:72%;padding-bottom:72%;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  animation:scanRing 12s linear infinite
+}
+#sr2{
+  width:88%;padding-bottom:88%;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  border-color:rgba(59,232,255,.03);
+  animation:scanRing 18s linear infinite reverse
+}
+@keyframes scanRing{from{transform:translate(-50%,-50%) rotate(0deg)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+
+/* Scanline overlay */
+#scanlines{
+  position:absolute;inset:0;pointer-events:none;z-index:4;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.03) 3px,rgba(0,0,0,.03) 4px)
+}
+
+/* Corner brackets */
+.corner{position:absolute;width:28px;height:28px;z-index:5;pointer-events:none}
+.corner::before,.corner::after{content:'';position:absolute;background:rgba(201,255,59,.35)}
+.corner::before{width:100%;height:1px;top:0;left:0}
+.corner::after{width:1px;height:100%;top:0;left:0}
+#c-tl{top:20px;left:20px}
+#c-tr{top:20px;right:20px;transform:scaleX(-1)}
+#c-bl{bottom:20px;left:20px;transform:scaleY(-1)}
+#c-br{bottom:20px;right:20px;transform:scale(-1)}
+
+/* Globe top label */
+#globe-label{
+  position:absolute;top:22px;left:50%;transform:translateX(-50%);
+  z-index:5;pointer-events:none;text-align:center
+}
+#globe-usercount{
+  font-family:var(--ff-display);font-size:2.1rem;font-weight:800;
+  color:var(--gold);letter-spacing:-.02em;
+  text-shadow:0 0 30px rgba(201,255,59,.35)
+}
+#globe-sublabel{
+  font-family:var(--ff-mono);font-size:.58rem;color:var(--muted);
+  letter-spacing:.3em;text-transform:uppercase;margin-top:2px
+}
+
+/* War mode button */
+#war-btn{
+  position:absolute;bottom:22px;left:50%;transform:translateX(-50%);
+  z-index:5;cursor:none;
+  display:flex;align-items:center;gap:8px;
+  padding:9px 22px;border-radius:30px;
+  background:rgba(255,79,109,.1);border:1px solid rgba(255,79,109,.35);
+  font-family:var(--ff-mono);font-size:.68rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--danger);
+  transition:background .25s,box-shadow .25s
+}
+#war-btn:hover{background:rgba(255,79,109,.18);box-shadow:0 0 20px rgba(255,79,109,.25)}
+#war-btn.active{background:rgba(255,79,109,.22);box-shadow:0 0 30px rgba(255,79,109,.35);border-color:var(--danger)}
+#war-btn .war-icon-btn{font-size:.8rem}
+
+/* Tooltip */
+#globe-tip{
+  position:fixed;z-index:200;pointer-events:none;
+  background:rgba(3,5,14,.88);border:1px solid rgba(201,255,59,.25);
+  border-radius:10px;padding:8px 14px;display:none;
+  font-family:var(--ff-display);font-size:.8rem;
+  box-shadow:0 4px 24px rgba(0,0,0,.5)
+}
+
+/* ════════════════════════════════════════════════
+   RIGHT PANEL
+════════════════════════════════════════════════ */
+#right-panel{
+  grid-column:3;grid-row:2;
+  background:var(--panel);
+  backdrop-filter:blur(12px);
+  border-left:1px solid var(--border);
+  overflow-y:auto;overflow-x:hidden;
+  display:flex;flex-direction:column;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.12) transparent
+}
+#right-panel::-webkit-scrollbar{width:2px}
+#right-panel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:1px}
+
+.rp-section{padding:18px 18px 14px;border-bottom:1px solid var(--border)}
+
+/* Country card */
+#country-card{display:flex;align-items:flex-start;gap:14px}
+#country-flag{font-size:2.2rem;line-height:1;flex-shrink:0}
+#country-info{flex:1;min-width:0}
+#country-name{font-family:var(--ff-display);font-size:1.05rem;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#country-region{font-family:var(--ff-mono);font-size:.58rem;color:var(--muted);letter-spacing:.22em;text-transform:uppercase}
+#country-users{
+  margin-top:8px;font-family:var(--ff-display);font-size:1.65rem;
+  font-weight:800;color:var(--gold);
+  text-shadow:0 0 20px rgba(201,255,59,.3)
+}
+#country-users-lbl{font-family:var(--ff-mono);font-size:.56rem;color:var(--muted);letter-spacing:.22em;text-transform:uppercase}
+
+/* Bar chart */
+#bar-chart{display:flex;flex-direction:column;gap:8px}
+.bar-row{display:flex;align-items:center;gap:8px}
+.bar-plat-icon{width:14px;height:14px;border-radius:3px;flex-shrink:0}
+.bar-plat-name{font-family:var(--ff-mono);font-size:.6rem;width:66px;flex-shrink:0;color:var(--text)}
+.bar-track{flex:1;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .9s cubic-bezier(.22,1,.36,1)}
+.bar-val{font-family:var(--ff-mono);font-size:.58rem;color:var(--muted);width:32px;text-align:right}
+
+/* AI insight */
+#ai-insight-body{
+  font-family:var(--ff-display);font-size:.78rem;font-weight:300;
+  line-height:1.65;color:rgba(232,238,255,.75)
+}
+.ai-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(201,255,59,.1);border:1px solid rgba(201,255,59,.25);
+  border-radius:20px;padding:3px 10px;
+  font-family:var(--ff-mono);font-size:.55rem;color:var(--gold);letter-spacing:.18em;
+  text-transform:uppercase;margin-bottom:10px
+}
+
+/* Trending */
+#trending-list{display:flex;flex-direction:column;gap:4px}
+.trend-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;border-radius:9px;border:1px solid transparent;
+  text-decoration:none;color:var(--text);
+  transition:background .2s,border-color .2s,transform .2s;cursor:none
+}
+.trend-item:hover{
+  background:rgba(201,255,59,.06);border-color:rgba(201,255,59,.15);
+  transform:translateX(3px)
+}
+.trend-num{font-family:var(--ff-mono);font-size:.58rem;color:var(--muted);width:16px}
+.trend-text{flex:1;font-family:var(--ff-display);font-size:.72rem;font-weight:500}
+.trend-arrow{font-size:.7rem;color:var(--gold);opacity:0;transition:opacity .2s}
+.trend-item:hover .trend-arrow{opacity:1}
+.trend-tag{
+  font-family:var(--ff-mono);font-size:.52rem;padding:2px 7px;
+  border-radius:20px;border:1px solid rgba(255,255,255,.1);color:var(--muted)
+}
+
+/* ════════════════════════════════════════════════
+   BOTTOM TICKER
+════════════════════════════════════════════════ */
+#ticker{
+  grid-column:1/-1;grid-row:3;
+  display:flex;align-items:center;gap:0;
+  background:rgba(3,5,14,.8);
+  border-top:1px solid var(--border);
+  overflow:hidden;z-index:50
+}
+.ticker-label{
+  display:flex;align-items:center;gap:7px;
+  padding:0 16px;height:100%;flex-shrink:0;
+  background:var(--gold);
+  font-family:var(--ff-mono);font-size:.6rem;font-weight:500;
+  color:#03050e;letter-spacing:.22em;text-transform:uppercase;
+  border-right:2px solid rgba(3,5,14,.3)
+}
+.ticker-viewport{flex:1;overflow:hidden;height:100%;display:flex;align-items:center}
+#ticker-track{
+  display:flex;gap:0;white-space:nowrap;
+  animation:tickerScroll 70s linear infinite
+}
+@keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.tick-item{
+  display:inline-flex;align-items:center;gap:12px;
+  padding:0 32px;font-family:var(--ff-display);font-size:.72rem;
+  color:rgba(232,238,255,.7);text-decoration:none;cursor:none;
+  transition:color .2s
+}
+.tick-item:hover{color:var(--gold)}
+.tick-sep{color:var(--muted);opacity:.4}
+
+/* ════════════════════════════════════════════════
+   KILL FEED
+════════════════════════════════════════════════ */
+#kill-feed{
+  position:fixed;top:74px;right:10px;z-index:300;
+  display:flex;flex-direction:column;gap:5px;
+  pointer-events:none;width:290px
+}
+.kf-entry{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(3,5,14,.88);border:1px solid rgba(255,79,109,.25);
+  border-radius:8px;padding:8px 12px;
+  animation:kfSlide .35s cubic-bezier(.22,1,.36,1) forwards;
+  font-family:var(--ff-mono);font-size:.62rem;
+  box-shadow:0 4px 20px rgba(0,0,0,.4)
+}
+.kf-entry.fade{animation:kfFade .5s ease forwards}
+@keyframes kfSlide{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+@keyframes kfFade{to{opacity:0;transform:translateX(20px)}}
+.kf-icon{width:16px;height:16px;border-radius:3px;flex-shrink:0}
+.kf-msg{color:var(--text);flex:1}
+.kf-msg strong{color:var(--gold)}
+.kf-badge{
+  padding:1px 7px;border-radius:10px;font-size:.52rem;
+  background:rgba(255,79,109,.18);color:var(--danger);border:1px solid rgba(255,79,109,.3)
+}
+
+/* ════════════════════════════════════════════════
+   LOADER
+════════════════════════════════════════════════ */
+#loader{
+  position:fixed;inset:0;z-index:9000;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:var(--bg);
+  transition:opacity .7s ease,visibility .7s ease
+}
+#loader.hidden{opacity:0;visibility:hidden}
+
+.loader-word{
+  font-family:var(--ff-display);font-size:5rem;font-weight:800;
+  letter-spacing:.18em;color:var(--text);display:flex;gap:.05em
+}
+.loader-word .gold{color:var(--gold)}
+.loader-sub{
+  font-family:var(--ff-mono);font-size:.65rem;color:var(--muted);
+  letter-spacing:.38em;text-transform:uppercase;margin-top:14px;margin-bottom:28px
+}
+.loader-bar-wrap{
+  width:260px;height:1px;background:rgba(255,255,255,.1);
+  border-radius:1px;overflow:hidden
+}
+.loader-bar-fill{
+  height:100%;width:0;background:var(--gold);border-radius:1px;
+  animation:loadBar 2.2s ease forwards
+}
+@keyframes loadBar{to{width:100%}}
+
+/* Scrollbar global */
+::-webkit-scrollbar{width:2px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:1px}
+
+/* Interactive hover class */
+button,a,.plat-btn,.trend-item,.tick-item{outline:none}
+</style>
+</head>
+<body>
+
+<!-- Loader -->
+<div id="loader">
+  <div class="loader-word" style="font-size:3.2rem"><span>SOCIAL PULSE</span>&nbsp;<span class="gold">GLOBE</span></div>
+  <div class="loader-sub">Real-Time World Social Media Intelligence</div>
+  <div class="loader-bar-wrap"><div class="loader-bar-fill"></div></div>
+</div>
+
+<!-- Cursors -->
+<div id="cur-dot"></div>
+<div id="cur-ring"></div>
+
+<!-- Vignette + blobs -->
+<div id="vignette"></div>
+<div class="blob" id="blob-gold"></div>
+<div class="blob" id="blob-cyan"></div>
+<div class="blob" id="blob-violet"></div>
+
+<!-- Kill feed -->
+<div id="kill-feed"></div>
+
+<!-- App grid -->
+<div id="app">
+
+  <!-- HEADER -->
+  <header id="header">
+    <div class="logo">
+      <div class="logo-mark" style="font-size:18px">🌐</div>
+      <div>
+        <div class="logo-text">Social <span>Pulse</span> Globe</div>
+        <div class="logo-sub">Real-Time Social Media Intelligence · 50+ Countries</div>
+      </div>
+    </div>
+
+    <div class="hdr-center">
+      <div class="hdr-stat">
+        <div class="val">5.24B</div>
+        <div class="lbl">Global Users</div>
+      </div>
+      <div class="hdr-divider"></div>
+      <div class="hdr-stat">
+        <div class="val">63.7%</div>
+        <div class="lbl">World Reach</div>
+      </div>
+      <div class="hdr-divider"></div>
+      <div class="hdr-stat">
+        <div class="val" id="hdr-pps">4,847</div>
+        <div class="lbl">Posts / Sec</div>
+      </div>
+    </div>
+
+    <div class="hdr-right">
+      <div id="live-clock">00:00:00 UTC</div>
+      <div class="live-pill">LIVE</div>
+    </div>
+  </header>
+
+  <!-- LEFT PANEL -->
+  <aside id="left-panel">
+    <div class="lp-section">
+      <div class="section-label">Platform</div>
+      <div id="platform-grid"></div>
+    </div>
+    <div class="lp-section">
+      <div class="section-label">Global Stats</div>
+      <div id="mini-stats">
+        <div class="mini-stat"><div class="val">4.2B</div><div class="lbl">Mobile</div></div>
+        <div class="mini-stat"><div class="val">2.9B</div><div class="lbl">Desktop</div></div>
+        <div class="mini-stat"><div class="val">89%</div><div class="lbl">Engagement</div></div>
+        <div class="mini-stat"><div class="val">2.1h</div><div class="lbl">Avg Session</div></div>
+      </div>
+    </div>
+    <div class="lp-section">
+      <div class="section-label">Posts / Second</div>
+      <div id="pps-block">
+        <div id="pps-num">4,847</div>
+        <div class="pps-lbl">Real-time<br>Activity</div>
+      </div>
+      <div class="pps-bar"><div class="pps-bar-fill"></div></div>
+    </div>
+    <div class="lp-section" style="flex:1">
+      <div class="section-label">War Board</div>
+      <div id="war-mini-board"></div>
+    </div>
+  </aside>
+
+  <!-- CENTER -->
+  <main id="center">
+    <canvas id="globe-canvas"></canvas>
+    <div class="scan-ring" id="sr1"></div>
+    <div class="scan-ring" id="sr2"></div>
+    <div id="scanlines"></div>
+    <div class="corner" id="c-tl"></div>
+    <div class="corner" id="c-tr"></div>
+    <div class="corner" id="c-bl"></div>
+    <div class="corner" id="c-br"></div>
+    <div id="globe-label">
+      <div id="globe-usercount">5.24B</div>
+      <div id="globe-sublabel">Active Social Users</div>
+    </div>
+    <button id="war-btn">
+      <span class="war-icon-btn">⚔</span> Platform War Mode
+    </button>
+    <div id="globe-tip"></div>
+  </main>
+
+  <!-- RIGHT PANEL -->
+  <aside id="right-panel">
+    <div class="rp-section" id="rp-country">
+      <div class="section-label">Selected Country</div>
+      <div id="country-card">
+        <div id="country-flag">🌐</div>
+        <div id="country-info">
+          <div id="country-name">Click the Globe</div>
+          <div id="country-region">Select any country</div>
+          <div id="country-users">—</div>
+          <div id="country-users-lbl">Total Social Users</div>
+        </div>
+      </div>
+    </div>
+    <div class="rp-section">
+      <div class="section-label">Platform Breakdown</div>
+      <div id="bar-chart"></div>
+    </div>
+    <div class="rp-section">
+      <div class="section-label">AI Insight</div>
+      <div class="ai-badge">✦ Pulse Intelligence</div>
+      <div id="ai-insight-body">Click a country on the globe to load regional intelligence analysis and behavioral insights.</div>
+    </div>
+    <div class="rp-section" style="flex:1">
+      <div class="section-label">Trending Topics</div>
+      <div id="trending-list"></div>
+    </div>
+  </aside>
+
+  <!-- TICKER -->
+  <footer id="ticker">
+    <div class="ticker-label">⬤ LIVE</div>
+    <div class="ticker-viewport">
+      <div id="ticker-track"></div>
+    </div>
+  </footer>
+
+</div><!-- #app -->
+
+<script>
+/* ════════════════════════════════════════════════
+   DATA
+════════════════════════════════════════════════ */
+const PLATFORMS = [
+  {id:'facebook',  name:'Facebook',  icon:'#1877f2', users:'3.05B'},
+  {id:'youtube',   name:'YouTube',   icon:'#ff0000', users:'2.70B'},
+  {id:'instagram', name:'Instagram', icon:'#e4405f', users:'2.35B'},
+  {id:'tiktok',    name:'TikTok',    icon:'#69c9d0', users:'1.58B'},
+  {id:'whatsapp',  name:'WhatsApp',  icon:'#25d366', users:'2.00B'},
+  {id:'x',         name:'X / Twitter', icon:'#e7e7e7', users:'550M'},
+  {id:'snapchat',  name:'Snapchat',  icon:'#fffc00', users:'750M'},
+  {id:'linkedin',  name:'LinkedIn',  icon:'#0a66c2', users:'1.05B'},
+  {id:'pinterest', name:'Pinterest', icon:'#e60023', users:'482M'},
+];
+
+const COUNTRIES = [
+  {code:'US',flag:'🇺🇸',name:'United States',region:'North America',users:245,
+   platforms:{facebook:178,youtube:238,instagram:156,tiktok:170,whatsapp:82,x:95,snapchat:108,linkedin:90,pinterest:98},
+   insight:"The US dominates premium digital advertising with hyper-personalized feeds. TikTok's legislative uncertainty is accelerating creator migration to YouTube Shorts. LinkedIn engagement peaks Tuesday–Thursday, correlating with B2B deal cycles.",
+   trending:['#AIRegulation2026','OpenAI vs Gemini','Super Bowl Reactions','Tesla Cybertruck Pro','March Madness 2026','Ozempic Alternatives','SpaceX Starship V5','Midwest Storm Warning','Wall Street AI Rally','Remote Work Reversal']},
+  {code:'IN',flag:'🇮🇳',name:'India',region:'South Asia',users:790,
+   platforms:{facebook:448,youtube:476,instagram:362,tiktok:0,whatsapp:535,x:25,snapchat:200,linkedin:120,pinterest:90},
+   insight:"India's social ecosystem is the world's most complex—WhatsApp drives rural commerce while Reels powers Tier‑2 city creators. YouTube remains the dominant video platform post-TikTok ban. Vernacular content in Hindi, Tamil and Bengali is outgrowing English 4:1.",
+   trending:['IPL 2026 Season','Budget Reaction','#MakeInIndia','Bollywood Controversy','Startup Funding','UPI International','Monsoon Forecast','NEET Results','Chandrayaan-4','Street Food Viral']},
+  {code:'CN',flag:'🇨🇳',name:'China',region:'East Asia',users:1050,
+   platforms:{facebook:0,youtube:0,instagram:0,tiktok:0,whatsapp:0,x:0,snapchat:0,linkedin:60,pinterest:0},
+   insight:"China's walled garden—WeChat, Douyin, Weibo, Bilibili and Xiaohongshu operate as a closed-loop economy. Super-app behavior means a single platform handles payments, social, video and e-commerce simultaneously. State regulations continue to shape algorithm priorities.",
+   trending:['两会 2026','国产芯片','DeepSeek R3','春节营销','新能源车','房地产政策','抖音创作者计划','电商大战','AI教育','ChatBot监管']},
+  {code:'BR',flag:'🇧🇷',name:'Brazil',region:'South America',users:144,
+   platforms:{facebook:111,youtube:142,instagram:122,tiktok:85,whatsapp:139,x:28,snapchat:12,linkedin:65,pinterest:40},
+   insight:"Brazil is the world's highest per-capita WhatsApp market. Instagram and TikTok drive the creator economy—Brazilians spend an average 4.8h daily on social platforms. Carnival content and football dominate virality cycles with massive regional spikes.",
+   trending:['Carnaval 2026','Lula Reforma','#BrasilCampeao','Elon no Brasil','Pix Super','Agro Tech','BBB26 Final','Crypto Real','Amazonia Alerta','Nova Capital']},
+  {code:'ID',flag:'🇮🇩',name:'Indonesia',region:'Southeast Asia',users:178,
+   platforms:{facebook:138,youtube:166,instagram:100,tiktok:127,whatsapp:142,x:18,snapchat:22,linkedin:28,pinterest:35},
+   insight:"Indonesia is TikTok's largest Southeast Asian market and a proving ground for social commerce. Batam, Jakarta and Surabaya are emerging creator hubs. Ramadan content windows generate 3.5× normal engagement, making seasonal timing critical for brands.",
+   trending:['Pemilu Daerah','#BanggaIndonesia','Gojek vs Grab','Batik Digital','Raja Ampat Viral','Startup Unicorn','Crypto Halal','Bali AI Festival','ASEAN Summit','Jokowi Legacy']},
+  {code:'US',flag:'🇺🇸',name:'United States',region:'North America',users:245,platforms:{facebook:178,youtube:238,instagram:156,tiktok:170,whatsapp:82,x:95,snapchat:108,linkedin:90,pinterest:98},insight:"The US dominates premium digital advertising with hyper-personalized feeds.",trending:['#AIRegulation2026','OpenAI vs Gemini','Super Bowl Reactions']},
+  {code:'GB',flag:'🇬🇧',name:'United Kingdom',region:'Europe',users:52,
+   platforms:{facebook:38,youtube:50,instagram:34,tiktok:20,whatsapp:36,x:22,snapchat:18,linkedin:28,pinterest:14},
+   insight:"The UK leads Europe in social commerce adoption. Instagram and TikTok drive fashion and beauty verticals, while LinkedIn remains pivotal for fintech networking. Post-Brexit regulatory divergence from EU is creating unique content compliance challenges for brands.",
+   trending:['General Election','Premier League','King Charles Visit','NHS Reform','Tech Tax 2026','London Climate Week','AI Safety Bill','Scottish Independence','Brexit 2.0 Talks','BAFTA 2026']},
+  {code:'DE',flag:'🇩🇪',name:'Germany',region:'Europe',users:61,
+   platforms:{facebook:30,youtube:58,instagram:28,tiktok:20,whatsapp:55,x:8,snapchat:10,linkedin:18,pinterest:12},
+   insight:"Germany's data-privacy culture restricts behavioral targeting—GDPR enforcement is the world's strictest. LinkedIn and Xing drive professional engagement, while YouTube dominates long-form consumption. WhatsApp is the dominant messaging layer for SMBs.",
+   trending:['Bundesliga Finale','EU AI Act','Berlin Startup Hub','Green Energy Q1','Deutsche Bank AI','Auto Industry Shift','Oktoberfest Prep','SPD vs CDU','Hydrogen Economy','Scholz Nachfolge']},
+  {code:'NG',flag:'🇳🇬',name:'Nigeria',region:'West Africa',users:36,
+   platforms:{facebook:31,youtube:28,instagram:24,tiktok:18,whatsapp:34,x:8,snapchat:5,linkedin:8,pinterest:4},
+   insight:"Nigeria is Africa's most dynamic social economy. X (Twitter) has outsized influence despite its size—Nigerian Twitter sets continent-wide discourse. Afrobeats content generates global impressions. Mobile-first users drive short-video adoption despite data cost constraints.",
+   trending:['Afrobeats Global','Tinubu Reform','#EndBadGovernance','Naira Exchange','Nollywood AI','Lagos Tech Week','Super Eagles','Petrol Subsidy','Dangote Refinery','PVC Registration']},
+  {code:'JP',flag:'🇯🇵',name:'Japan',region:'East Asia',users:82,
+   platforms:{facebook:26,youtube:78,instagram:45,tiktok:30,whatsapp:12,x:66,snapchat:8,linkedin:12,pinterest:22},
+   insight:"Japan is X's (Twitter's) highest-engagement market globally—per-capita tweet volume far exceeds Asia averages. Anime, idol culture and gaming create self-sustaining content loops. Instagram drives luxury and fashion discovery among Millennials, while TikTok grows rapidly with Gen Z.",
+   trending:['桜 2026','日本代表', 'AI規制法','東京オリンピック2030','新幹線延伸','Nintendo Switch 3','円安対策','アニメ輸出','岸田政策','ラーメン総選挙']},
+  {code:'MX',flag:'🇲🇽',name:'Mexico',region:'North America',users:82,
+   platforms:{facebook:72,youtube:78,instagram:48,tiktok:40,whatsapp:74,x:12,snapchat:24,linkedin:22,pinterest:20},
+   insight:"Mexico leads Latin America in TikTok creator output per capita. Football (Liga MX + US leagues) drives the biggest spikes. Telenovela-style drama content performs exceptionally on Instagram Reels. WhatsApp group commerce is replacing formal e-commerce for 60% of SMBs.",
+   trending:['Cruz Azul vs América','Claudia Presidenta','#MéxicoDigital','Narco Docuserie','Peso Fuerte','Tren Maya Open','IA en Escuelas','Día de Muertos Prep','UNAM Rankings','Frontera Tech']},
+];
+
+const TICKER_ITEMS = [
+  {text:'Meta Q1 revenue beats estimates by 12% — AI ad targeting drives record CPMs',url:'#'},
+  {text:'TikTok US ban enforcement paused again — 180M users remain active',url:'#'},
+  {text:'OpenAI launches GPT-5 multimodal API — social platforms scramble to integrate',url:'#'},
+  {text:'India surpasses 900M social media users — WhatsApp dominant in Tier-3 cities',url:'#'},
+  {text:'YouTube Shorts hits 100B daily views — monetization expanded to 90 countries',url:'#'},
+  {text:'LinkedIn Premium AI coaching reaches 50M paid subscribers globally',url:'#'},
+  {text:'Elon Musk: X advertising revenue up 34% year-over-year in February 2026',url:'#'},
+  {text:'Pinterest introduces AI visual search commerce — conversion rates up 280%',url:'#'},
+  {text:'Snapchat AR glasses gen 4 unveiled — 12M pre-orders in 48 hours',url:'#'},
+  {text:'EU Digital Markets Act fines Apple €2.4B over Instagram data sharing',url:'#'},
+  {text:'Brazil social commerce market hits $180B — WhatsApp Pay dominant force',url:'#'},
+  {text:'Nigeria passes AI Social Media Framework — content moderation mandate',url:'#'},
+];
+
+const WAR_DATA = PLATFORMS.map((p,i) => ({
+  ...p,
+  countries: Math.floor(180 - i * 14),
+  hp: Math.floor(100 - i * 4),
+  change: i % 3 === 0 ? '+2' : i % 3 === 1 ? '-1' : '+0'
+}));
+
+/* ════════════════════════════════════════════════
+   UTILS
+════════════════════════════════════════════════ */
+function qs(sel, ctx = document) { return ctx.querySelector(sel); }
+function fmt(n) { return n.toLocaleString('en-US'); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+/* ════════════════════════════════════════════════
+   CURSOR
+════════════════════════════════════════════════ */
+(function initCursor() {
+  const dot = qs('#cur-dot'), ring = qs('#cur-ring');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+  function tick() {
+    dot.style.left = mx + 'px'; dot.style.top = my + 'px';
+    rx = lerp(rx, mx, 0.11); ry = lerp(ry, my, 0.11);
+    ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+    requestAnimationFrame(tick);
+  }
+  tick();
+  document.querySelectorAll('button,a,.plat-btn,.trend-item,.tick-item').forEach(el => {
+    el.addEventListener('mouseenter', () => document.body.classList.add('hover-active'));
+    el.addEventListener('mouseleave', () => document.body.classList.remove('hover-active'));
+  });
+})();
+
+/* ════════════════════════════════════════════════
+   CLOCK
+════════════════════════════════════════════════ */
+(function initClock() {
+  const el = qs('#live-clock');
+  function tick() {
+    const d = new Date();
+    const hh = String(d.getUTCHours()).padStart(2,'0');
+    const mm = String(d.getUTCMinutes()).padStart(2,'0');
+    const ss = String(d.getUTCSeconds()).padStart(2,'0');
+    el.textContent = `${hh}:${mm}:${ss} UTC`;
+  }
+  tick(); setInterval(tick, 1000);
+})();
+
+/* ════════════════════════════════════════════════
+   POSTS / SECOND
+════════════════════════════════════════════════ */
+(function initPPS() {
+  let v = 4847;
+  const el1 = qs('#pps-num'), el2 = qs('#hdr-pps');
+  function tick() {
+    v += Math.round((Math.random() - 0.5) * 110);
+    v = Math.max(3800, Math.min(6200, v));
+    const s = fmt(v);
+    el1.textContent = s; el2.textContent = s;
+  }
+  tick(); setInterval(tick, 750);
+})();
+
+/* ════════════════════════════════════════════════
+   PLATFORM SWITCHER
+════════════════════════════════════════════════ */
+let activePlatform = 'all';
+function initPlatformSwitcher() {
+  const grid = qs('#platform-grid');
+  PLATFORMS.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'plat-btn';
+    btn.dataset.id = p.id;
+    btn.style.setProperty('--pc', p.icon + '44');
+    btn.style.setProperty('--pc-glow', p.icon + '33');
+    btn.innerHTML = `
+      <div class="plat-icon" style="background:${p.icon}"></div>
+      <span class="plat-name">${p.name}</span>
+      <span class="plat-users">${p.users}</span>`;
+    btn.addEventListener('click', () => setPlatform(p.id, btn));
+    btn.addEventListener('mouseenter', () => document.body.classList.add('hover-active'));
+    btn.addEventListener('mouseleave', () => document.body.classList.remove('hover-active'));
+    grid.appendChild(btn);
+  });
+  // Select first
+  setPlatform('facebook', grid.querySelector('.plat-btn'));
+}
+
+function setPlatform(id, btnEl) {
+  activePlatform = id;
+  document.querySelectorAll('.plat-btn').forEach(b => b.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+  // Shift blob color
+  const p = PLATFORMS.find(x => x.id === id);
+  if (p) {
+    qs('#blob-gold').style.background = p.icon.replace('#','rgba(') + '11)';
+    // Restore format
+    const hex = p.icon.replace('#','');
+    const r = parseInt(hex.slice(0,2),16), g = parseInt(hex.slice(2,4),16), b = parseInt(hex.slice(4,6),16);
+    qs('#blob-gold').style.background = `rgba(${r},${g},${b},.07)`;
+  }
+}
+
+/* ════════════════════════════════════════════════
+   WAR MINI SCOREBOARD
+════════════════════════════════════════════════ */
+function renderWarBoard() {
+  const el = qs('#war-mini-board');
+  el.innerHTML = WAR_DATA.slice(0,9).map((p,i) => `
+    <div class="war-row">
+      <div class="war-rank">${i+1}</div>
+      <div class="war-icon" style="background:${p.icon}"></div>
+      <div class="war-name" style="color:${p.icon}">${p.name}</div>
+      <div class="war-hp">
+        <div class="war-hp-fill" style="width:${p.hp}%;background:${p.icon}"></div>
+      </div>
+      <div class="war-change ${p.change.startsWith('+') ? 'up':'dn'}">${p.change}</div>
+    </div>
+  `).join('');
+}
+
+/* ════════════════════════════════════════════════
+   KILL FEED
+════════════════════════════════════════════════ */
+const killFeed = qs('#kill-feed');
+const KF_TEMPLATES = [
+  (a,b) => `<strong>${a}</strong> overthrew <strong>${b}</strong> in 🇧🇷 Brazil`,
+  (a,b) => `<strong>${a}</strong> seized 3 countries from <strong>${b}</strong>`,
+  (a,b) => `<strong>${a}</strong> hit 1B daily posts — overtaking <strong>${b}</strong>`,
+  (a,b) => `<strong>${a}</strong> new territory coup vs <strong>${b}</strong>`,
+  (a,b) => `ALERT: <strong>${b}</strong> losing ground to <strong>${a}</strong> in Asia`,
+];
+
+function pushKillFeed() {
+  const platforms = PLATFORMS.filter(p => Math.random() > 0.3);
+  const a = pick(PLATFORMS), b = pick(PLATFORMS.filter(x => x.id !== a.id));
+  const template = pick(KF_TEMPLATES);
+  const entry = document.createElement('div');
+  entry.className = 'kf-entry';
+  entry.innerHTML = `
+    <div class="kf-icon" style="background:${a.icon}"></div>
+    <div class="kf-msg">${template(a.name, b.name)}</div>
+    <div class="kf-badge">WAR</div>`;
+  killFeed.prepend(entry);
+  while (killFeed.children.length > 4) killFeed.lastChild.remove();
+  setTimeout(() => { entry.classList.add('fade'); setTimeout(() => entry.remove(), 500); }, 3200);
+}
+
+/* ════════════════════════════════════════════════
+   WAR MODE
+════════════════════════════════════════════════ */
+let warActive = false, warTimer = null, warPlatIdx = 0;
+const warBtn = qs('#war-btn');
+warBtn.addEventListener('click', toggleWar);
+
+function toggleWar() {
+  warActive = !warActive;
+  warBtn.classList.toggle('active', warActive);
+  if (warActive) {
+    cycleWar();
+    warTimer = setInterval(() => { cycleWar(); pushKillFeed(); }, 2400);
+  } else {
+    clearInterval(warTimer);
+  }
+}
+
+function cycleWar() {
+  warPlatIdx = (warPlatIdx + 1) % PLATFORMS.length;
+  const p = PLATFORMS[warPlatIdx];
+  const btn = document.querySelector(`.plat-btn[data-id="${p.id}"]`);
+  setPlatform(p.id, btn);
+}
+
+/* ════════════════════════════════════════════════
+   RIGHT PANEL — COUNTRY
+════════════════════════════════════════════════ */
+function loadCountry(country) {
+  qs('#country-flag').textContent = country.flag;
+  qs('#country-name').textContent = country.name;
+  qs('#country-region').textContent = country.region;
+  qs('#country-users').textContent = country.users + 'M';
+
+  // Bar chart
+  const chart = qs('#bar-chart');
+  chart.innerHTML = '';
+  const plats = PLATFORMS.map(p => ({
+    p, val: country.platforms[p.id] || 0
+  })).filter(x => x.val > 0).sort((a,b) => b.val - a.val);
+  const max = plats[0]?.val || 1;
+  plats.forEach(({p, val}) => {
+    const pct = Math.round(val / max * 100);
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `
+      <div class="bar-plat-icon" style="background:${p.icon}"></div>
+      <div class="bar-plat-name">${p.name}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:0%;background:${p.icon}" data-w="${pct}"></div></div>
+      <div class="bar-val">${val}M</div>`;
+    chart.appendChild(row);
+  });
+  // Animate bars
+  setTimeout(() => {
+    chart.querySelectorAll('.bar-fill').forEach(bar => {
+      bar.style.width = bar.dataset.w + '%';
+    });
+  }, 60);
+
+  // AI Insight
+  qs('#ai-insight-body').textContent = country.insight;
+
+  // Trending
+  const trendEl = qs('#trending-list');
+  trendEl.innerHTML = '';
+  country.trending.slice(0,8).forEach((t, i) => {
+    const a = document.createElement('a');
+    a.href = `https://www.google.com/search?q=${encodeURIComponent(t)}`;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.className = 'trend-item';
+    a.innerHTML = `
+      <div class="trend-num">${i+1}</div>
+      <div class="trend-text">${t}</div>
+      <div class="trend-arrow">→</div>
+      <div class="trend-tag">TRENDING</div>`;
+    a.addEventListener('mouseenter', () => document.body.classList.add('hover-active'));
+    a.addEventListener('mouseleave', () => document.body.classList.remove('hover-active'));
+    trendEl.appendChild(a);
+  });
+}
+
+/* ════════════════════════════════════════════════
+   TICKER
+════════════════════════════════════════════════ */
+(function initTicker() {
+  const track = qs('#ticker-track');
+  const items = [...TICKER_ITEMS, ...TICKER_ITEMS]; // double for seamless loop
+  track.innerHTML = items.map(item => `
+    <a href="${item.url}" target="_blank" rel="noopener" class="tick-item">
+      ${item.text}
+      <span class="tick-sep">◆</span>
+    </a>`).join('');
+  document.querySelectorAll('.tick-item').forEach(el => {
+    el.addEventListener('mouseenter', () => document.body.classList.add('hover-active'));
+    el.addEventListener('mouseleave', () => document.body.classList.remove('hover-active'));
+  });
+})();
+
+/* ════════════════════════════════════════════════
+   THREE.JS GLOBE
+════════════════════════════════════════════════ */
+(function initGlobe() {
+  const canvas = qs('#globe-canvas');
+  const center = qs('#center');
+
+  // Renderer
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x000000, 0);
+
+  // Scene + Camera
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
+  camera.position.set(0, 0, 3);
+
+  // ── Globe Texture (Canvas) ───────────────────────────────────────
+  const texCanvas = document.createElement('canvas');
+  texCanvas.width = 2048; texCanvas.height = 1024;
+  const ctx = texCanvas.getContext('2d');
+
+  // Ocean base
+  ctx.fillStyle = '#030a1a';
+  ctx.fillRect(0, 0, 2048, 1024);
+
+  // Radial center glow
+  const gCenter = ctx.createRadialGradient(1024, 512, 0, 1024, 512, 900);
+  gCenter.addColorStop(0, 'rgba(0,40,80,.35)');
+  gCenter.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gCenter;
+  ctx.fillRect(0, 0, 2048, 1024);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(201,255,59,0.04)';
+  ctx.lineWidth = 1;
+  for (let lat = -80; lat <= 80; lat += 10) {
+    const y = (90 - lat) / 180 * 1024;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(2048, y); ctx.stroke();
+  }
+  for (let lng = -180; lng <= 180; lng += 10) {
+    const x = (lng + 180) / 360 * 2048;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 1024); ctx.stroke();
+  }
+
+  // Continent blobs
+  const continents = [
+    { lon: -100, lat: 42,  w: 340, h: 260, color: 'rgba(201,255,59,0.065)' },  // N America
+    { lon: -60,  lat: -18, w: 240, h: 300, color: 'rgba(201,255,59,0.055)' },  // S America
+    { lon: 15,   lat: 50,  w: 260, h: 200, color: 'rgba(201,255,59,0.07)' },   // Europe
+    { lon: 20,   lat: 5,   w: 280, h: 380, color: 'rgba(201,255,59,0.06)' },   // Africa
+    { lon: 75,   lat: 35,  w: 480, h: 340, color: 'rgba(201,255,59,0.075)' },  // Asia
+    { lon: 134,  lat: -25, w: 200, h: 200, color: 'rgba(201,255,59,0.05)' },   // Australia
+    { lon: -30,  lat: 65,  w: 140, h: 120, color: 'rgba(201,255,59,0.04)' },   // Greenland
+  ];
+  continents.forEach(c => {
+    const cx = (c.lon + 180) / 360 * 2048;
+    const cy = (90 - c.lat) / 180 * 1024;
+    const gx = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(c.w, c.h) * 0.6);
+    gx.addColorStop(0, c.color);
+    gx.addColorStop(0.6, c.color.replace(')', ',0.3)').replace('rgba(', 'rgba(').split(',0.3)')[0] + ',0.02)');
+    gx.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = gx;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, c.w * 0.55, c.h * 0.55, 0, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // City dots
+  const CITIES = [
+    { lon: -74.0, lat: 40.7, name: 'New York' },
+    { lon: -0.12, lat: 51.5, name: 'London' },
+    { lon: 2.35,  lat: 48.9, name: 'Paris' },
+    { lon: 72.8,  lat: 19.0, name: 'Mumbai' },
+    { lon: 77.2,  lat: 28.6, name: 'Delhi' },
+    { lon: 116.4, lat: 39.9, name: 'Beijing' },
+    { lon: 121.5, lat: 31.2, name: 'Shanghai' },
+    { lon: 139.7, lat: 35.7, name: 'Tokyo' },
+    { lon: -46.6, lat: -23.5,name: 'São Paulo' },
+    { lon: 3.4,   lat: 6.5,  name: 'Lagos' },
+    { lon: 55.3,  lat: 25.2, name: 'Dubai' },
+    { lon: 103.8, lat: 1.35, name: 'Singapore' },
+    { lon: 151.2, lat: -33.9,name: 'Sydney' },
+    { lon: 126.9, lat: 37.6, name: 'Seoul' },
+    { lon: -99.1, lat: 19.4, name: 'Mexico City' },
+    { lon: 37.6,  lat: 55.8, name: 'Moscow' },
+    { lon: 13.4,  lat: 52.5, name: 'Berlin' },
+    { lon: -43.2, lat: -22.9,name: 'Rio de Janeiro' },
+    { lon: 28.9,  lat: -1.3, name: 'Kigali' },
+    { lon: 80.2,  lat: 13.1, name: 'Chennai' },
+  ];
+
+  CITIES.forEach(c => {
+    const cx = (c.lon + 180) / 360 * 2048;
+    const cy = (90 - c.lat) / 180 * 1024;
+    // Glow halo
+    const gh = ctx.createRadialGradient(cx, cy, 0, cx, cy, 9);
+    gh.addColorStop(0, 'rgba(201,255,59,.8)');
+    gh.addColorStop(0.4, 'rgba(59,232,255,.25)');
+    gh.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = gh;
+    ctx.beginPath(); ctx.arc(cx, cy, 9, 0, Math.PI * 2); ctx.fill();
+    // Core dot
+    ctx.fillStyle = '#c9ff3b';
+    ctx.beginPath(); ctx.arc(cx, cy, 2, 0, Math.PI * 2); ctx.fill();
+  });
+
+  // Dashed arcs between cities
+  const ARCS = [
+    [0,1],[1,2],[1,4],[4,3],[3,5],[5,7],[7,13],[5,9],[0,14],[3,10],[10,11],[11,8],[2,16],
+  ];
+  ctx.setLineDash([4, 8]);
+  ctx.lineWidth = 0.8;
+  ctx.strokeStyle = 'rgba(59,232,255,0.18)';
+  ARCS.forEach(([a, b]) => {
+    const ax = (CITIES[a].lon + 180) / 360 * 2048;
+    const ay = (90 - CITIES[a].lat) / 180 * 1024;
+    const bx = (CITIES[b].lon + 180) / 360 * 2048;
+    const by = (90 - CITIES[b].lat) / 180 * 1024;
+    const mx = (ax + bx) / 2;
+    const my = Math.min(ay, by) - 80;
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.quadraticCurveTo(mx, my, bx, by);
+    ctx.stroke();
+  });
+  ctx.setLineDash([]);
+
+  const globeTexture = new THREE.CanvasTexture(texCanvas);
+
+  // ── Globe Mesh ───────────────────────────────────────────────────
+  const globeGeo  = new THREE.SphereGeometry(1, 72, 72);
+  const globeMat  = new THREE.MeshPhongMaterial({ map: globeTexture, specular: new THREE.Color(0x223344), shininess: 12 });
+  const globe     = new THREE.Mesh(globeGeo, globeMat);
+  scene.add(globe);
+
+  // Wireframe overlay
+  const wireMat = new THREE.MeshBasicMaterial({ color: 0x3be8ff, wireframe: true, transparent: true, opacity: 0.028 });
+  const wireMesh = new THREE.Mesh(new THREE.SphereGeometry(1.008, 36, 36), wireMat);
+  scene.add(wireMesh);
+
+  // ── 3 Atmosphere Shells ──────────────────────────────────────────
+  const atmoData = [
+    { r: 1.08, color: 0x00e8ff, opacity: 0.05 },
+    { r: 1.15, color: 0xc9ff3b, opacity: 0.02 },
+    { r: 1.25, color: 0xc9ff3b, opacity: 0.008 },
+  ];
+  atmoData.forEach(a => {
+    const mat = new THREE.MeshBasicMaterial({ color: a.color, transparent: true, opacity: a.opacity, side: THREE.BackSide });
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(a.r, 48, 48), mat));
+  });
+
+  // ── 2 Orbit Rings ────────────────────────────────────────────────
+  const ringData = [
+    { r: 1.38, tube: 0.004, color: 0xc9ff3b, opacity: 0.45, rx: 0.3, rz: 0.5 },
+    { r: 1.55, tube: 0.003, color: 0x3be8ff, opacity: 0.35, rx: -0.6, rz: 0.2 },
+  ];
+  ringData.forEach(d => {
+    const geo = new THREE.TorusGeometry(d.r, d.tube, 8, 120);
+    const mat = new THREE.MeshBasicMaterial({ color: d.color, transparent: true, opacity: d.opacity });
+    const ring = new THREE.Mesh(geo, mat);
+    ring.rotation.x = d.rx; ring.rotation.z = d.rz;
+    scene.add(ring);
+  });
+
+  // ── Star Particles ────────────────────────────────────────────────
+  const starGeo = new THREE.BufferGeometry();
+  const starPos = new Float32Array(4000 * 3);
+  for (let i = 0; i < 4000 * 3; i++) starPos[i] = (Math.random() - 0.5) * 80;
+  starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+  const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.12, transparent: true, opacity: 0.7 });
+  const stars = new THREE.Points(starGeo, starMat);
+  scene.add(stars);
+
+  // ── Lights ────────────────────────────────────────────────────────
+  scene.add(new THREE.AmbientLight(0x0a0f20, 2.5));
+  const sunLight = new THREE.DirectionalLight(0xc8ff80, 2.2);
+  sunLight.position.set(3, 2, 4);
+  scene.add(sunLight);
+  const fillLight = new THREE.DirectionalLight(0x00e8ff, 0.6);
+  fillLight.position.set(-4, 0, -2);
+  scene.add(fillLight);
+  const rimLight = new THREE.DirectionalLight(0xffe066, 0.35);
+  rimLight.position.set(0, 4, -3);
+  scene.add(rimLight);
+
+  // ── Raycaster ─────────────────────────────────────────────────────
+  const raycaster = new THREE.Raycaster();
+  const mouse = new THREE.Vector2();
+
+  // ── Mouse Interaction ────────────────────────────────────────────
+  let isDragging = false, hasDragged = false;
+  let velX = 0, velY = 0;
+  let lastX = 0, lastY = 0;
+  let globeRotX = 0, globeRotY = 0;
+  const tip = qs('#globe-tip');
+
+  canvas.addEventListener('mousedown', e => {
+    isDragging = true; hasDragged = false;
+    lastX = e.clientX; lastY = e.clientY;
+    velX = 0; velY = 0;
+    canvas.style.cursor = 'none';
+  });
+
+  window.addEventListener('mouseup', e => {
+    if (!hasDragged) handleClick(e);
+    isDragging = false;
+  });
+
+  window.addEventListener('mousemove', e => {
+    if (isDragging) {
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      if (Math.abs(dx) + Math.abs(dy) > 2) hasDragged = true;
+      velX = dx * 0.008;
+      velY = dy * 0.008;
+      globeRotY += velX;
+      globeRotX += velY;
+      globeRotX = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, globeRotX));
+      lastX = e.clientX; lastY = e.clientY;
+    }
+    // Update mouse for raycaster
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  });
+
+  canvas.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+
+  function handleClick(e) {
+    raycaster.setFromCamera(mouse, camera);
+    const hits = raycaster.intersectObject(globe);
+    if (hits.length > 0) {
+      const country = pick(COUNTRIES);
+      loadCountry(country);
+      // Flash label
+      const ul = qs('#globe-usercount');
+      ul.textContent = country.users + 'M';
+      ul.style.color = '#ffffff';
+      setTimeout(() => { ul.style.color = ''; ul.style.transition = 'color .5s'; }, 300);
+    }
+  }
+
+  // ── Resize ────────────────────────────────────────────────────────
+  function resize() {
+    const w = center.clientWidth, h = center.clientHeight;
+    renderer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // ── Animation Loop ────────────────────────────────────────────────
+  const clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    const t = clock.getElapsedTime();
+
+    // Momentum decay
+    if (!isDragging) {
+      velX *= 0.94; velY *= 0.94;
+      globeRotY += velX;
+      globeRotX += velY;
+      // Auto-rotation
+      globeRotY += 0.0009;
+    }
+
+    globe.rotation.y = globeRotY;
+    globe.rotation.x = globeRotX;
+    wireMesh.rotation.y = globeRotY;
+    wireMesh.rotation.x = globeRotX;
+
+    // Slow counter-rotation of stars
+    stars.rotation.y -= 0.00015;
+    stars.rotation.x -= 0.00008;
+
+    renderer.render(scene, camera);
+  }
+  animate();
+})();
+
+/* ════════════════════════════════════════════════
+   INIT ALL
+════════════════════════════════════════════════ */
+initPlatformSwitcher();
+renderWarBoard();
+loadCountry(COUNTRIES[0]);
+
+// Loader dismiss
+setTimeout(() => {
+  qs('#loader').classList.add('hidden');
+}, 2400);
+
+// Periodic kill feed entries when war is off (rare ambient ones)
+setInterval(() => {
+  if (!warActive && Math.random() < 0.25) pushKillFeed();
+}, 8000);
+</script>
+</body>
+</html>
