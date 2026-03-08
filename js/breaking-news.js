@@ -71,28 +71,29 @@
     return null;
   }
 
-  // ── Static breaking news (replaces Reddit API — CORS blocked on GitHub Pages) ──
+  // ── Static breaking news (replaces Reddit API — CORS-blocked on GitHub Pages) ──
   const STATIC_BREAKING = [
-    { iso2:'IN', title:'IPL 2026 becomes most-tweeted sporting event in history', url:'https://news.google.com/search?q=IPL+2026+social+media', ups:31400, created_utc: Date.now()/1000 - 3600, permalink:'' },
-    { iso2:'US', title:'TikTok usage surges 34% in one week after ban reversal', url:'https://news.google.com/search?q=TikTok+ban+USA+2026', ups:45200, created_utc: Date.now()/1000 - 7200, permalink:'' },
-    { iso2:'CN', title:'WeChat mini-programs cross 1 billion daily active users', url:'https://news.google.com/search?q=WeChat+billion+users', ups:18400, created_utc: Date.now()/1000 - 5400, permalink:'' },
-    { iso2:'BR', title:'Brazil becomes WhatsApp most loyal country at 95% penetration', url:'https://news.google.com/search?q=WhatsApp+Brazil+penetration', ups:12600, created_utc: Date.now()/1000 - 9000, permalink:'' },
-    { iso2:'NG', title:'Lagos producers dominate TikTok global trending charts', url:'https://news.google.com/search?q=Nigeria+TikTok+trending', ups:9800, created_utc: Date.now()/1000 - 1800, permalink:'' },
+    { iso2: 'US', title: 'TikTok ban reversed — US usage surges 34% in one week',           ups: 45200, created_utc: Date.now()/1000 - 3600,  url: 'https://reddit.com/r/technology' },
+    { iso2: 'IN', title: 'India adds 50M social media users in Q1 2026 — fastest growing', ups: 28100, created_utc: Date.now()/1000 - 7200,  url: 'https://reddit.com/r/india' },
+    { iso2: 'CN', title: 'WeChat mini-programs cross 1 billion daily active users',          ups: 18400, created_utc: Date.now()/1000 - 10800, url: 'https://reddit.com/r/technology' },
+    { iso2: 'BR', title: 'Brazil becomes WhatsApp most loyal country — 95% penetration',    ups: 14600, created_utc: Date.now()/1000 - 14400, url: 'https://reddit.com/r/brazil' },
+    { iso2: 'NG', title: "Nigeria leads Africa's social media revolution — 45M new users",  ups: 9800,  created_utc: Date.now()/1000 - 18000, url: 'https://reddit.com/r/africa' },
   ];
 
-  async function fetchBreaking() {
-    // Use static data — Reddit CORS and rate-limits break on static hosting
+  function fetchBreaking() {
+    // Expire old beacons
     const now = Date.now();
     beacons = beacons.filter(b => {
       if (now - b.born > BEACON_TTL) { removeBeaconEl(b); return false; }
       return true;
     });
 
-    STATIC_BREAKING.forEach(post => {
-      const iso2 = post.iso2;
+    // Add static beacons if not already present
+    STATIC_BREAKING.forEach(({ iso2, title, ups, url, created_utc }) => {
       if (beacons.find(b => b.iso2 === iso2)) return;
       const ctr = CENTROIDS[iso2];
       if (!ctr) return;
+      const post = { title, ups, url, created_utc, permalink: url };
       addBeacon(iso2, ctr.lat, ctr.lng, post);
     });
 
@@ -161,9 +162,9 @@
     if (!popup || !inner) return;
 
     const ups  = post.ups >= 1000 ? (post.ups/1000).toFixed(1)+'k' : post.ups;
-    const diff = Math.floor(Date.now()/1000 - (post.created_utc || Date.now()/1000));
+    const diff = Math.floor(Date.now()/1000 - post.created_utc);
     const ago  = diff < 3600 ? `${Math.floor(diff/60)}m ago` : `${Math.floor(diff/3600)}h ago`;
-    const link = post.url || (post.permalink ? `https://reddit.com${post.permalink}` : '#');
+    const link = post.url || `https://reddit.com${post.permalink}`;
 
     inner.innerHTML = `
       <div class="bp-badge">🔴 BREAKING</div>
@@ -196,10 +197,8 @@
     const sorted   = Object.entries(countryData.platforms || {}).sort((a, b) => b[1] - a[1]);
     const topPlats = sorted.slice(0, 4).map(([k, v]) => `${k}:${v}M`).join(', ');
 
-    const apiKey = getApiKey();
-    let result = null;
-    if (apiKey) result = await callClaudeImpact(post.title, countryData.name, topPlats, apiKey);
-    if (!result) result = localImpactFallback(post.title, iso2, countryData, sorted);
+    // Always use local fallback — Anthropic API is CORS-blocked on GitHub Pages
+    const result = localImpactFallback(post.title, iso2, countryData, sorted);
     renderImpactCard(container, result, sorted);
   }
 

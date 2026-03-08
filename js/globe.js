@@ -245,11 +245,10 @@
 
   async function loadGeoJson() {
     // Try multiple mirror URLs in case one is down/rate-limited
-    // jsDelivr first — works on GitHub Pages without CORS issues
     const urls = [
-      "https://cdn.jsdelivr.net/gh/vasturiano/globe.gl@master/example/datasets/ne_110m_admin_0_countries.geojson",
-      "https://unpkg.com/globe.gl/example/datasets/ne_110m_admin_0_countries.geojson",
       "https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson",
+      "https://raw.githubusercontent.com/vasturiano/globe.gl/main/example/datasets/ne_110m_admin_0_countries.geojson",
+      "https://cdn.jsdelivr.net/gh/vasturiano/globe.gl@master/example/datasets/ne_110m_admin_0_countries.geojson",
     ];
     let lastErr;
     for (const url of urls) {
@@ -662,16 +661,16 @@
     });
   }
 
-  // Boot — GlobeModule is set inside initGlobe() after the instance exists
-  // Ensure container has explicit size before init
-  const _gc = document.getElementById("globe-container");
-  if (_gc) {
-    _gc.style.width  = _gc.style.width  || "100%";
-    _gc.style.height = _gc.style.height || "100%";
-    if (!_gc.offsetHeight) _gc.style.minHeight = "400px";
-  }
-
+  // Boot — Use 'load' (not DOMContentLoaded) so CDN scripts + layout are fully ready.
+  // Ensures Globe.gl is available and globe-container has real pixel dimensions.
   function safeInit() {
+    const _gc = document.getElementById("globe-container");
+    if (_gc) {
+      _gc.style.width  = "100%";
+      _gc.style.height = "100%";
+      _gc.style.minHeight = "400px";
+      _gc.style.display = "block";
+    }
     try {
       initGlobe().catch(err => {
         console.error("[Social Globe] Globe init failed:", err);
@@ -681,7 +680,7 @@
     }
   }
 
-  // Use window.load to guarantee Globe.gl CDN has fully executed before init
+  // Always wait for 'load' so CDN scripts and layout are complete
   window.addEventListener("load", safeInit);
 })();
 

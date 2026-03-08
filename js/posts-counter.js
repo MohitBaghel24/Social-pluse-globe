@@ -22,17 +22,27 @@
 
   const BASE_TOTAL = PLATFORMS.reduce((s, p) => s + p.rate, 0);
 
-  // ── Mount counter: create hidden #pps-number element ─────────────────
-  // (No longer needs .header-meta — that element was removed in redesign)
+  // ── Mount counter HTML in a hidden element so #pps-number is always in DOM ──
   function init() {
-    // Reuse existing element if already created (e.g. by inline script)
-    let numberEl = document.getElementById('pps-number');
-    if (!numberEl) {
-      numberEl = document.createElement('span');
-      numberEl.id = 'pps-number';
-      numberEl.style.cssText = 'position:absolute;left:-9999px;width:0;height:0;overflow:hidden;pointer-events:none';
-      document.body.appendChild(numberEl);
+    // Try the old header-meta first; if redesigned header doesn't have it,
+    // mount to a hidden body div so the PPS bridge in index.html can poll it.
+    let headerMeta = document.querySelector('.header-meta');
+    if (!headerMeta) {
+      headerMeta = document.createElement('div');
+      headerMeta.style.cssText = 'position:absolute;opacity:0;pointer-events:none;width:0;height:0;overflow:hidden;';
+      document.body.appendChild(headerMeta);
     }
+
+    const wrap = document.createElement('div');
+    wrap.id = 'posts-counter';
+    wrap.innerHTML = `
+      <div class="pps-main">
+        <span id="pps-number">0</span>
+        <span class="pps-unit">POSTS/SEC</span>
+      </div>
+      <div class="pps-breakdown" id="pps-breakdown"></div>
+    `;
+    headerMeta.insertBefore(wrap, headerMeta.firstChild);
 
     // ── Ramp-up animation on page load (0 → BASE_TOTAL in ~1.8 s) ──────
     let displayed = 0;
@@ -60,15 +70,9 @@
   }
 
   function setCount(n) {
-    // Always use en-US to avoid Indian/European number formats (e.g. "1,18,732")
-    const formatted = Math.round(n).toLocaleString('en-US');
     const el = document.getElementById('pps-number');
-    if (el) el.textContent = formatted;
-    // Directly update header + ticker so bridge poll isn't needed
-    const hdrEl = document.getElementById('hdr-pps-val');
-    if (hdrEl) hdrEl.textContent = formatted;
-    const tkrEl = document.getElementById('tkr-pps');
-    if (tkrEl) tkrEl.textContent = formatted;
+    // Always use 'en-US' locale to prevent Indian/European number formatting
+    if (el) el.textContent = Math.round(n).toLocaleString('en-US');
   }
 
   function updateBreakdown(idx) {
@@ -84,9 +88,9 @@
     });
 
     el.innerHTML =
-      `<span class="pps-plat">${a.emoji} ${a.key}: <strong>${a._live.toLocaleString()}/s</strong></span>` +
+      `<span class="pps-plat">${a.emoji} ${a.key}: <strong>${a._live.toLocaleString('en-US')}/s</strong></span>` +
       `<span class="pps-sep">·</span>` +
-      `<span class="pps-plat">${b.emoji} ${b.key}: <strong>${b._live.toLocaleString()}/s</strong></span>`;
+      `<span class="pps-plat">${b.emoji} ${b.key}: <strong>${b._live.toLocaleString('en-US')}/s</strong></span>`;
   }
 
   // Wait for DOM ready
