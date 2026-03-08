@@ -286,9 +286,11 @@
 
   function polyAltitude(feat) {
     if (lockedCountry) {
-      return feat === lockedCountry ? 0.07 : 0.005;
+      // Reduced altitude so it merges better with the globe surface
+      return feat === lockedCountry ? 0.035 : 0.005;
     }
-    return hoverCountry && feat === hoverCountry ? 0.055 : 0.01;
+    // Reduced hover altitude for smoother feel
+    return hoverCountry && feat === hoverCountry ? 0.025 : 0.008;
   }
 
   function polyLabel(feat) {
@@ -361,7 +363,7 @@
           .polygonSideColor(polySideColor)
           .polygonAltitude(polyAltitude);
       })
-      .onPolygonClick((feat, evt) => {
+      .onPolygonClick((feat, evt, coords) => {
         if (!feat || lockedCountry) return; // ignore clicks while already animating
         const iso2 = feat.properties._iso2;
         const data = feat.properties._data; // may be null for unconfigured countries
@@ -386,8 +388,17 @@
         tooltip.style.display = "none";
         _zoomLock = true;
 
-        // ── 1. Compute centroid ──────────────────────────────────────
-        const centroid = computeCentroid(feat);
+        // ── 1. Target Determination (prioritise click point) ────────
+        // Fix: Use the actual clicked coordinate if available, otherwise fallback to centroid
+        let targetLat, targetLng;
+        if (coords) {
+          targetLat = coords.lat;
+          targetLng = coords.lng;
+        } else {
+          const c = computeCentroid(feat);
+          targetLat = c.lat;
+          targetLng = c.lng;
+        }
 
         // ── 2. Lock state: dim all others, raise selected polygon ────
         lockedCountry = feat;
@@ -400,19 +411,15 @@
         // ── 3. Pulsing white border on selected country ──────────────
         startLockPulse();
 
-        // ── 4. Show targeting reticle over centroid ──────────────────
-        showReticle(centroid.lat, centroid.lng);
+        // ── 4. Show targeting reticle over target ────────────────────
+        showReticle(targetLat, targetLng);
 
-        // ── 5. Dramatic zoom: pull to 2.5 centred on country … ───────
+        // ── 5. Smooth Zoom Animation ─────────────────────────────────
+        // Fix: Use a single smooth tween to avoid "merging" glitches and jerky movement
         globeInstance.pointOfView(
-          { lat: centroid.lat, lng: centroid.lng, altitude: 2.5 }, 600
+          { lat: targetLat, lng: targetLng, altitude: 1.6 }, 
+          1200
         );
-        // … then zoom into 1.5 (arriving at 1200 ms total)
-        setTimeout(() => {
-          globeInstance.pointOfView(
-            { lat: centroid.lat, lng: centroid.lng, altitude: 1.5 }, 600
-          );
-        }, 600);
 
         // ── 6. After rotation completes: open panel, clean up ────────
         setTimeout(() => {
@@ -421,10 +428,10 @@
           // Sync mouse-tracking base so globe doesn't jump on resume
           const pov = globeInstance.pointOfView();
           _gfBaseLng = pov.lng  || 0;
-          _gfAlt     = pov.altitude || 1.5;
+          _gfAlt     = pov.altitude || 1.6;
           _zoomLock  = false;
           window.PanelModule.open(iso2, data);
-        }, 1300);
+        }, 1250);
       });
 
     // Mouse tracker for tooltip

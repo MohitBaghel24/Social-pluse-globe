@@ -288,7 +288,26 @@ h1 {
   .plat-label { display: none; }
   .plat-shortcut { display: none; }
   .plat-btn { padding: 5px 9px; }
-  #platform-toolbar { gap: 4px; padding: 5px 8px; }
+  
+  /* MOVED DOCK TO BOTTOM ON MOBILE/TABLET */
+  #platform-toolbar { 
+    top: auto; 
+    bottom: 20px; 
+    left: 50%;
+    transform: translateX(-50%);
+    gap: 4px; 
+    padding: 5px 8px; 
+    width: max-content;
+    max-width: 95vw;
+    flex-wrap: wrap; 
+    justify-content: center;
+    animation: toolbarSlideUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.3s both;
+  }
+}
+
+@keyframes toolbarSlideUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 /* ── Legend ── */
@@ -430,6 +449,10 @@ h1 {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+@media (max-width: 480px) {
+  #side-panel { width: 100%; }
 }
 
 #side-panel.open {
