@@ -3863,7 +3863,14 @@ header {
 }
 .plat-label { display: none !important; }
 .plat-shortcut { display: none !important; }
-.plat-icon { font-size: 17px !important; line-height: 1 !important; }
+.plat-icon {
+  font-size: 17px !important;
+  line-height: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: none !important;
+}
 /* Dock extra buttons (War + Viral) */
 .dock-extra-btn {
   width: 38px; height: 38px; border-radius: 10px; font-size: 17px;
@@ -4162,23 +4169,76 @@ header { overflow: hidden !important; }
   .stat-card { min-width: 90px !important; padding: 7px 10px !important; }
   .stat-value { font-size: 14px !important; }
 
-  /* Dock: sit just above bottom edge */
+  /* ─── Dock pill ─── */
   .dock-wrap {
-    bottom: 6px !important;
-    padding: 5px 8px !important;
-    gap: 0 !important;
-    max-width: calc(100vw - 20px) !important;
+    bottom: 8px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    height: 56px !important;
+    max-width: calc(100vw - 16px) !important;
+    padding: 0 10px !important;
+    gap: 2px !important;
+    border-radius: 28px !important;
+    background: rgba(8,12,28,0.95) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45), inset 0 0 0 0.5px rgba(255,255,255,0.05) !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+    flex-wrap: nowrap !important;
   }
+  .dock-wrap::-webkit-scrollbar { display: none !important; }
+
+  /* ─── Uniform platform buttons ─── */
   .plat-btn {
-    width: 34px !important;
-    height: 34px !important;
-    font-size: 15px !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    flex-shrink: 0 !important;
+    border-radius: 12px !important;
+    font-size: 0 !important;        /* hide stray text nodes */
+    padding: 0 !important;
   }
-  .plat-icon { font-size: 15px !important; }
+  .plat-icon {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+    pointer-events: none !important;
+  }
+  .plat-label,
+  .plat-shortcut { display: none !important; }
+
+  /* ─── Extra dock buttons (War/Tracker) ─── */
   .dock-extra-btn {
-    width: 34px !important;
-    height: 34px !important;
-    font-size: 15px !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    flex-shrink: 0 !important;
+    border-radius: 12px !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+  }
+
+  /* ─── Separator ─── */
+  .dock-sep-v {
+    width: 1px !important;
+    height: 22px !important;
+    margin: 0 4px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* ─── platform-toolbar: no independent positioning ─── */
+  #platform-toolbar {
+    display: flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+    flex-shrink: 0 !important;
   }
 
   /* Globe tooltip: slightly smaller */
@@ -4204,23 +4264,31 @@ header { overflow: hidden !important; }
   #click-hint { display: none !important; }
   #kill-feed-wrap { width: 190px !important; right: 4px !important; }
 
-  /* Extra-small dock: tighter buttons */
+  /* Extra-small dock: slightly tighter */
   .dock-wrap {
     bottom: 6px !important;
-    padding: 4px 6px !important;
+    height: 50px !important;
+    padding: 0 8px !important;
+    gap: 1px !important;
+    border-radius: 25px !important;
   }
   .plat-btn {
-    width: 30px !important;
-    height: 30px !important;
-    font-size: 14px !important;
-    border-radius: 8px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    border-radius: 10px !important;
+    font-size: 0 !important;
   }
-  .plat-icon { font-size: 14px !important; }
+  .plat-icon {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 16px !important;
+  }
   .dock-extra-btn {
-    width: 30px !important;
-    height: 30px !important;
-    font-size: 14px !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    font-size: 16px !important;
   }
-  .dock-sep-v { margin: 0 4px !important; }
 }
 

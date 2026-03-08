@@ -12,7 +12,7 @@
     { key: "YouTube",   label: "YouTube",   icon: "▶️", color: "#FF0000", shortcut: "4" },
     { key: "TikTok",    label: "TikTok",    icon: "🎵", color: "#69C9D0", shortcut: "5" },
     { key: "WhatsApp",  label: "WhatsApp",  icon: "💬", color: "#25D366", shortcut: "6" },
-    { key: "X/Twitter", label: "X",         icon: "✖️", color: "#1DA1F2", shortcut: "7" },
+    { key: "X/Twitter", label: "X",         icon: "✕",  color: "#1DA1F2", shortcut: "7" },
     { key: "WeChat",    label: "WeChat",    icon: "💚", color: "#07C160", shortcut: "8" },
     { key: "Snapchat",  label: "Snapchat",  icon: "👻", color: "#FFFC00", shortcut: "9" },
   ];
