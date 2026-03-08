@@ -579,92 +579,6 @@ h1 {
   50%       { box-shadow: 0 0 14px rgba(0,245,255,0.5), 0 0 30px rgba(0,245,255,0.15); }
 }
 
-/* ── Bottom Ticker ── */
-#ticker-bar {
-  position: fixed;
-  bottom: 0; left: 0; right: 0;
-  height: 44px;
-  z-index: 20;
-  background: linear-gradient(to right, rgba(4,9,18,0.98), rgba(6,10,22,0.98));
-  border-top: 1px solid rgba(57,255,20,0.10);
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-}
-
-.ticker-header {
-  flex-shrink: 0;
-  padding: 0 16px;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 0.62rem;
-  letter-spacing: 0.1em;
-  color: var(--gold);
-  text-transform: uppercase;
-  border-right: 1px solid rgba(0,245,255,0.12);
-  white-space: nowrap;
-}
-
-.ticker-viewport {
-  flex: 1;
-  overflow: hidden;
-  position: relative;
-  height: 100%;
-  display: flex;
-  align-items: center;
-}
-
-#ticker-track {
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-  animation: tickerScroll 60s linear infinite;
-  gap: 0;
-  padding-left: 20px;
-}
-
-#ticker-track:hover {
-  animation-play-state: paused;
-}
-
-@keyframes tickerScroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-
-.ticker-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 18px;
-  font-size: 0.78rem;
-  color: var(--text);
-  text-decoration: none;
-  transition: color 0.2s;
-  white-space: nowrap;
-}
-.ticker-item:hover { color: var(--cyan); }
-
-.ticker-flag { font-size: 1rem; }
-
-.ticker-label {
-  background: rgba(0,245,255,0.12);
-  border: 1px solid rgba(0,245,255,0.2);
-  border-radius: 4px;
-  padding: 1px 6px;
-  font-size: 0.65rem;
-  color: var(--cyan);
-  font-family: 'Space Grotesk', sans-serif;
-  letter-spacing: 0.05em;
-}
-
-.ticker-title { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
-
-.ticker-sep {
-  color: rgba(0,245,255,0.3);
-  font-size: 0.6rem;
-  padding: 0 6px;
-}
-
 /* ── Toast ── */
 #toast {
   position: fixed;
@@ -1352,7 +1266,7 @@ body.war-room-active #stats-bar,
 body.war-room-active #legend,
 body.war-room-active #click-hint,
 body.war-room-active #war-panel,
-body.war-room-active #ticker-bar { display: none !important; }
+/* body.war-room-active ticker rule removed */
 
 /* ── WAR ROOM overlay (right 40%) ── */
 .war-room-overlay {
@@ -3015,11 +2929,10 @@ body.war-room-active #ticker-bar { display: none !important; }
    MOBILE  (≤ 768 px) — center globe, clear panels
    ═══════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  /* Globe: leave room for header (54px) at top and dock+ticker (~98px) at bottom
-     so the sphere never hides behind the platform dock */
+  /* Globe: leave room for header (54px) at top and dock (~68px) at bottom */
   #globe-container {
     top: 54px !important;
-    bottom: 98px !important;
+    bottom: 68px !important;
     left: 0 !important;
     right: 0 !important;
     position: fixed !important;
@@ -3499,10 +3412,7 @@ header button:hover,
 .kf-entry:hover { background: var(--glass-hover) !important; }
 .kf-entry strong { color: var(--cyan) !important; }
 
-/* ── TICKER — re-enabled ────────────────────────────── */
-#ticker-bar {
-  /* visible — override removed */
-}
+/* ticker removed */
 
 /* ── Viral Tracker panel ────────────────────────────── */
 #vt-panel {
@@ -3909,7 +3819,7 @@ header {
 /* ── 6. Dock ──────────────────────────────────────────────────── */
 .dock-wrap {
   position: fixed !important;
-  bottom: 48px !important; left: 50% !important; transform: translateX(-50%) !important;
+  bottom: 8px !important; left: 50% !important; transform: translateX(-50%) !important;
   z-index: 100 !important;
   display: flex !important; align-items: center !important;
   background: rgba(8,12,20,0.92) !important;
@@ -4030,7 +3940,7 @@ header {
 /* ── 8. Legend ────────────────────────────────────────────────── */
 #legend {
   position: fixed !important;
-  bottom: 60px !important; left: 28px !important;
+  bottom: 68px !important; left: 28px !important;
   z-index: 50 !important; background: transparent !important;
   border: none !important; padding: 0 !important; box-shadow: none !important;
 }
@@ -4055,7 +3965,7 @@ header {
 /* ── 9. Click Hint ────────────────────────────────────────────── */
 #click-hint {
   position: fixed !important;
-  bottom: 98px !important; left: 50% !important; transform: translateX(-50%) !important;
+  bottom: 68px !important; left: 50% !important; transform: translateX(-50%) !important;
   top: auto !important; right: auto !important;
   font-family: var(--fm) !important; font-size: 8.5px !important;
   color: var(--dm) !important; letter-spacing: .16em !important; text-transform: uppercase !important;
@@ -4066,49 +3976,7 @@ header {
 }
 @keyframes hintPulseNew { 0%,100% { opacity:.4; } 50% { opacity:.8; } }
 
-/* ── 10. Ticker ───────────────────────────────────────────────── */
-#ticker-bar {
-  position: fixed !important;
-  bottom: 0 !important; left: 0 !important; right: 0 !important;
-  height: 40px !important; min-height: 40px !important;
-  background: rgba(8,12,20,0.98) !important;
-  border-top: 1px solid var(--ln) !important;
-  display: flex !important; align-items: center !important;
-  z-index: 200 !important; overflow: hidden !important;
-}
-.ticker-live-pill {
-  display: flex; align-items: center; gap: 6px;
-  padding: 0 16px; border-right: 1px solid var(--ln);
-  height: 100%; flex-shrink: 0;
-  font-family: var(--fm); font-size: 8px; letter-spacing: .2em; text-transform: uppercase;
-  color: var(--ac);
-}
-.ticker-live-dot {
-  width: 5px; height: 5px; border-radius: 50%;
-  background: var(--rd); box-shadow: 0 0 5px var(--rd);
-  animation: livePulseNew 1.4s ease-in-out infinite; flex-shrink: 0;
-}
-.ticker-right-stat {
-  display: flex; align-items: center; gap: 16px;
-  padding: 0 16px; border-left: 1px solid var(--ln);
-  height: 100%; flex-shrink: 0; font-family: var(--fm); font-size: 8.5px;
-}
-.ticker-right-stat span { white-space: nowrap; }
-/* Ticker items */
-.ticker-item {
-  font-family: var(--fm) !important; font-size: 9px !important;
-  color: var(--mt) !important; padding: 0 24px !important;
-}
-.ticker-item:hover { color: var(--fg) !important; }
-.ticker-sep { color: var(--dm) !important; font-size: 8px !important; }
-.ticker-label {
-  background: rgba(79,255,176,0.08) !important;
-  border: 1px solid rgba(79,255,176,0.15) !important;
-  color: var(--ac) !important;
-  font-family: var(--fm) !important; font-size: 7px !important;
-}
-/* Old header span hidden */
-.ticker-header { display: none !important; }
+/* ── 10. Ticker removed ── */
 
 /* ── 11. Globe tooltip ────────────────────────────────────────── */
 #globe-tooltip {
@@ -4294,9 +4162,9 @@ header { overflow: hidden !important; }
   .stat-card { min-width: 90px !important; padding: 7px 10px !important; }
   .stat-value { font-size: 14px !important; }
 
-  /* Dock: sit 40px above ticker (ticker = 36px, so dock bottom = 40px gives 4px gap) */
+  /* Dock: sit just above bottom edge */
   .dock-wrap {
-    bottom: 40px !important;
+    bottom: 6px !important;
     padding: 5px 8px !important;
     gap: 0 !important;
     max-width: calc(100vw - 20px) !important;
@@ -4320,9 +4188,6 @@ header { overflow: hidden !important; }
     max-width: 160px !important;
   }
 
-  /* Ticker: thinner */
-  #ticker-bar { height: 36px !important; min-height: 36px !important; }
-
   /* Decorative elements: hide on small screens */
   .scan-ring { display: none !important; }
   .globe-corner { display: none !important; }
@@ -4341,7 +4206,7 @@ header { overflow: hidden !important; }
 
   /* Extra-small dock: tighter buttons */
   .dock-wrap {
-    bottom: 38px !important;
+    bottom: 6px !important;
     padding: 4px 6px !important;
   }
   .plat-btn {
