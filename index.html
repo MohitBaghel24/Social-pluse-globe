@@ -14,13 +14,23 @@
   <meta name="twitter:description" content="Real-time 3D world map of social media dominance." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
   <!-- globe.gl bundles Three.js internally — no separate three.min.js needed -->
   <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.27.2/dist/globe.gl.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
+<div id="cu" aria-hidden="true"></div>
+<div id="cr" aria-hidden="true"></div>
+<div id="bg-dots" aria-hidden="true"></div>
+<div id="bg-vignette" aria-hidden="true"></div>
+<div class="scan-ring scan-ring-1" aria-hidden="true"></div>
+<div class="scan-ring scan-ring-2" aria-hidden="true"></div>
+<div class="globe-corner tl" aria-hidden="true"></div>
+<div class="globe-corner tr" aria-hidden="true"></div>
+<div class="globe-corner bl" aria-hidden="true"></div>
+<div class="globe-corner br" aria-hidden="true"></div>
 <div id="intro-overlay" aria-hidden="true">
   <div class="intro-title">SOCIAL GLOBE</div>
   <div class="intro-subtitle">Real-Time World Social Media Intelligence</div>
@@ -38,33 +48,44 @@
   <div class="ret-scanline"></div>
 </div>
 <header>
-  <div class="header-logo">
-    <div class="logo-icon" aria-hidden="true" style="background:linear-gradient(135deg,#22D3EE,#0EA5E9)">
-      <svg width="28" height="28" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="11" cy="11" r="9" stroke="currentColor" stroke-width="1.4"/>
-        <path d="M11 2C11 2 7.5 6.5 7.5 11C7.5 15.5 11 20 11 20" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-        <path d="M11 2C11 2 14.5 6.5 14.5 11C14.5 15.5 11 20 11 20" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-        <path d="M2.5 8.5H19.5M2.5 13.5H19.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-        <circle cx="11" cy="11" r="1.8" fill="currentColor"/>
-      </svg>
-    </div>
-    <div>
-      <h1>Social Globe</h1>
-      <div class="header-subtitle">Real-Time Social Media Intelligence · 50+ Countries</div>
-    </div>
+  <div class="hdr-logo">
+    <div class="hdr-logo-ring"></div>
+    <span class="hdr-logo-txt">Social<span class="hdr-logo-dot">.</span>Globe</span>
   </div>
-  <div class="header-meta">
-    <div class="timestamp">
-      <div class="pulse-dot"></div>
-      <span>Updated: <strong id="last-updated-text">—</strong></span>
+  <nav class="hdr-nav">
+    <button class="hdr-nav-item active">Globe</button>
+    <button class="hdr-nav-item" id="war-room-btn">War Room<span class="hdr-nav-badge"></span></button>
+    <button class="hdr-nav-item" id="hdr-viral-btn">Viral</button>
+    <button class="hdr-nav-item">Analytics</button>
+    <button class="hdr-nav-item">Game</button>
+  </nav>
+  <div class="hdr-right">
+    <div class="hdr-live" id="live-indicator" role="button" tabindex="0" aria-label="Live — click to view feed">
+      <div class="hdr-live-dot"></div>
+      <span>Live</span>
     </div>
-    <button id="refresh-btn" title="Refresh data" aria-label="Refresh data"><span class="icon" aria-hidden="true">↻</span> Refresh</button>
-    <button id="war-room-btn" title="Enter WAR ROOM fullscreen mode"><span class="wr-btn-icon">☠</span> WAR ROOM</button>
-    <button id="war-btn" title="Toggle Platform War leaderboard" aria-pressed="false">⚔ PLATFORM WAR</button>
-    <button id="vt-toggle-btn" title="Toggle Viral Tracker arcs" aria-pressed="false">⬡ VIRAL</button>
-    <div id="live-indicator" class="live-indicator" role="button" tabindex="0" aria-label="Live breaking news — click to scroll to feed" title="Live feed">
-      <span class="live-dot"></span><span class="live-label">LIVE</span>
+    <div class="hdr-sep"></div>
+    <div class="hdr-pps-chip">
+      <span class="hdr-pps-val" id="hdr-pps-val">0</span>
+      <span class="hdr-pps-label">Posts / sec</span>
     </div>
+    <div class="hdr-sep"></div>
+    <div class="hdr-stat">
+      <span class="hdr-stat-v" id="hdr-stat-users">5.24B</span>
+      <span class="hdr-stat-l">Users</span>
+    </div>
+    <div class="hdr-sep"></div>
+    <div class="hdr-stat">
+      <span class="hdr-stat-v" id="hdr-utc">--:--:--</span>
+      <span class="hdr-stat-l">UTC</span>
+    </div>
+    <div class="hdr-sep"></div>
+    <div class="hdr-updated">
+      <div class="hdr-upd-dot"></div>
+      <span id="hdr-upd-txt">just now</span>
+    </div>
+    <div class="hdr-sep"></div>
+    <button class="hdr-refresh-btn" id="refresh-btn">↻ Refresh</button>
   </div>
 </header>
 <!-- ── Platform War sliding panel ── -->
@@ -102,18 +123,33 @@
   <div id="bp-status" class="bp-status" style="display:none"></div>
   <div id="bp-cards" class="bp-cards"></div>
 </div>
-<nav id="platform-toolbar" role="toolbar" aria-label="Filter globe by platform"></nav>
+<div class="dock-wrap">
+  <nav id="platform-toolbar" role="toolbar" aria-label="Filter globe by platform"></nav>
+  <div class="dock-sep-v" aria-hidden="true"></div>
+  <button class="dock-extra-btn" id="war-btn" title="Platform War" aria-pressed="false" data-tooltip="Platform War">⚔️</button>
+  <button class="dock-extra-btn" id="vt-toggle-btn" title="Viral Tracker" aria-pressed="false" data-tooltip="Viral Tracker">📡</button>
+</div>
 <aside id="stats-bar" aria-label="Global statistics">
-  <div class="stat-card"><div class="val" id="stat-users">5.24B</div><div class="lbl">Global Users</div></div>
-  <div class="stat-card"><div class="val" id="stat-pct">63.7%</div><div class="lbl">World Penetration</div></div>
-  <div class="stat-card"><div class="val" id="stat-time">6h 37m</div><div class="lbl">Daily Avg. Use</div></div>
+  <div class="stat-card">
+    <div class="val" id="stat-users">5.24B</div>
+    <div class="lbl">Global Users</div>
+    <div class="stat-trend">↑ +2.1% this month</div>
+  </div>
+  <div class="stat-card">
+    <div class="val" id="stat-pct">63.7%</div>
+    <div class="lbl">World Penetration</div>
+  </div>
+  <div class="stat-card">
+    <div class="val" id="stat-time">6h 37m</div>
+    <div class="lbl">Daily Avg. Use</div>
+  </div>
 </aside>
 <div id="legend" aria-label="Map colour legend">
   <div class="legend-title">Social Media Users</div>
   <div class="legend-bar"></div>
   <div class="legend-labels"><span>Low</span><span>Medium</span><span>High</span></div>
 </div>
-<div id="click-hint" aria-hidden="true">◄ Click any country to explore ►</div>
+<div id="click-hint" aria-hidden="true">← Click any country to explore →</div>
 <div id="panel-overlay" aria-hidden="true"></div>
 <aside id="side-panel" role="complementary" aria-label="Country social media details">
   <div class="panel-header">
@@ -161,9 +197,16 @@
 <div id="vt-arc-popup" class="vt-arc-popup" aria-hidden="true"></div>
 <!-- ── Ticker bar ── -->
 <div id="ticker-bar" aria-label="Trending news ticker">
-  <span class="ticker-header">◆ LIVE</span>
+  <div class="ticker-live-pill">
+    <div class="ticker-live-dot"></div>
+    <span>LIVE</span>
+  </div>
   <div class="ticker-viewport">
     <div id="ticker-track"></div>
+  </div>
+  <div class="ticker-right-stat">
+    <span><span id="tkr-pps" style="color:var(--ac)">—</span> <span style="color:var(--dm)">posts/s</span></span>
+    <span><span style="color:var(--ac)">195</span> <span style="color:var(--dm)">countries</span></span>
   </div>
 </div>
 <div id="toast" role="status" aria-live="polite"></div>
@@ -198,6 +241,8 @@
       const pct = Math.round((total / 8200) * 100); // 8.2B world internet users
       const el = document.getElementById('stat-users');
       if (el) el.textContent = billions + 'B';
+      const hdrU = document.getElementById('hdr-stat-users');
+      if (hdrU) hdrU.textContent = billions + 'B';
       const pctEl = document.getElementById('stat-pct');
       if (pctEl) pctEl.textContent = pct + '%';
     })();
@@ -255,5 +300,87 @@
   </div>
   <div id="lf-items"></div>
 </div>
+
+<script>
+// ── Custom Cursor (lerp ring) ─────────────────────────────────────────
+(function() {
+  var cu = document.getElementById('cu');
+  var cr = document.getElementById('cr');
+  if (!cu || !cr) return;
+  var mx = window.innerWidth/2, my = window.innerHeight/2;
+  var rx = mx, ry = my;
+  document.addEventListener('mousemove', function(e) { mx = e.clientX; my = e.clientY; });
+  function tick() {
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+    cu.style.left = mx + 'px'; cu.style.top = my + 'px';
+    cr.style.left = rx + 'px'; cr.style.top = ry + 'px';
+    requestAnimationFrame(tick);
+  }
+  tick();
+  document.querySelectorAll('button,a,[role="button"]').forEach(function(el) {
+    el.addEventListener('mouseenter', function() {
+      cu.style.width = cu.style.height = '10px';
+      cr.style.width = cr.style.height = '38px';
+      cr.style.borderColor = 'rgba(79,255,176,.65)';
+    });
+    el.addEventListener('mouseleave', function() {
+      cu.style.width = cu.style.height = '5px';
+      cr.style.width = cr.style.height = '24px';
+      cr.style.borderColor = 'rgba(79,255,176,.35)';
+    });
+  });
+})();
+
+// ── UTC Clock ────────────────────────────────────────────────────────
+function _updateUTC() {
+  var el = document.getElementById('hdr-utc');
+  if (el) el.textContent = new Date().toUTCString().split(' ')[4];
+}
+_updateUTC();
+setInterval(_updateUTC, 1000);
+
+// ── PPS bridge: posts-counter.js #pps-number → #hdr-pps-val & #tkr-pps
+setInterval(function() {
+  var src = document.getElementById('pps-number');
+  if (!src) return;
+  var v = src.textContent;
+  var dst = document.getElementById('hdr-pps-val');
+  if (dst) dst.textContent = v;
+  var tkr = document.getElementById('tkr-pps');
+  if (tkr) tkr.textContent = v;
+}, 400);
+
+// ── Header nav active state ───────────────────────────────────────────
+document.querySelectorAll('.hdr-nav-item').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.hdr-nav-item').forEach(function(b) { b.classList.remove('active'); });
+    this.classList.add('active');
+  });
+});
+// Viral nav → reuse dock vt-toggle-btn
+document.getElementById('hdr-viral-btn')?.addEventListener('click', function() {
+  document.getElementById('vt-toggle-btn')?.click();
+});
+// War Room nav already has id="war-room-btn" wired by war-room.js
+
+// ── Updated timer for new hdr-upd-txt ────────────────────────────────
+window._lastRefresh = window._lastRefresh || Date.now();
+setInterval(function() {
+  var el = document.getElementById('hdr-upd-txt');
+  if (!el) return;
+  var mins = Math.round((Date.now() - (window._lastRefresh||Date.now())) / 60000);
+  el.textContent = mins < 1 ? 'just now' : mins + ' min ago';
+}, 30000);
+// On manual refresh, reset timer
+var _origRefreshClick = document.getElementById('refresh-btn');
+if (_origRefreshClick) {
+  _origRefreshClick.addEventListener('click', function() {
+    window._lastRefresh = Date.now();
+    var u = document.getElementById('hdr-upd-txt');
+    if (u) u.textContent = 'just now';
+  });
+}
+</script>
 </body>
 </html>
