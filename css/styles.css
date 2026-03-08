@@ -4563,21 +4563,252 @@ header { overflow: hidden !important; }
   }
 }
 
-/* ── GLOBE CONTAINER: constrained on mobile ──────────────────────── */
-/* Leave room: header(52px top) + dock(52px) + ticker(36px) = 140px bottom */
+/* =================================================================
+   MOBILE MASTER LAYOUT — 7-prompt comprehensive fix
+   Highest specificity block; overrides everything above.
+   Stack (bottom → top):
+     1  globe
+     400 ticker
+     450 dock
+     460 geo-banner
+     480 kill-feed
+     500 header
+     690 panel-overlay
+     700 side-panel (bottom sheet)
+     800 war-room / viral overlays
+   ================================================================= */
+
+/* ── PROMPT 7: master layout reset ────────────────────────────── */
 @media (max-width: 768px) {
+
+  /* 1. Header — 48px, always visible */
+  header {
+    position: fixed !important;
+    top: 0 !important; left: 0 !important; right: 0 !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    z-index: 500 !important;
+    overflow: hidden !important;
+    padding: 0 12px !important;
+    gap: 8px !important;
+  }
+
+  /* 2. Globe — fills between header and dock/ticker
+        PROMPT 3: reset any margin/offset so it re-centers
+        PROMPT 4: overflow:hidden clips beacons that escape */
   #globe-container {
-    top: 54px !important;
-    bottom: 90px !important;  /* dock + ticker approx */
+    position: fixed !important;
+    top: 48px !important;
+    bottom: 88px !important;        /* dock(52) + ticker(36) */
     left: 0 !important;
     right: 0 !important;
-    min-height: 260px !important;
+    width: 100vw !important;
+    z-index: 1 !important;
+    min-height: 240px !important;
+    overflow: hidden !important;    /* PROMPT 4: clips rouge beacons */
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
-  /* Adjust coords display (already hidden via #CO above) */
+  #globe-container canvas {
+    position: absolute !important;
+    top: 0 !important; left: 0 !important;
+    width: 100% !important; height: 100% !important;
+  }
+
+  /* 3. Ticker — pinned to very bottom
+        PROMPT 5: height expands by safe-area-inset-bottom */
+  #ticker-bar {
+    position: fixed !important;
+    bottom: 0 !important; left: 0 !important; right: 0 !important;
+    height: 36px !important;
+    z-index: 400 !important;
+    background: rgba(3,5,14,0.95) !important;
+    backdrop-filter: blur(10px) !important;
+    border-top: 1px solid rgba(255,255,255,0.08) !important;
+  }
+
+  /* 4. Dock — single row, above ticker
+        PROMPT 2: flex-direction:row + flex-wrap:nowrap = no double row */
+  .dock-wrap {
+    position: fixed !important;
+    bottom: 44px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 450 !important;
+    /* Single-row enforcement */
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+    /* Sizing */
+    height: 52px !important;
+    max-width: calc(100vw - 24px) !important;
+    padding: 0 10px !important;
+    gap: 4px !important;
+    border-radius: 26px !important;
+  }
+  .dock-wrap::-webkit-scrollbar { display: none !important; }
+
+  /* Platform toolbar inside dock: also single-row */
+  #platform-toolbar {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 4px !important;
+    overflow: visible !important;
+    /* no separate scroll — parent dock scrolls */
+  }
+
+  /* 5. PROMPT 1: Country panel → bottom sheet 58vh
+        (Already converted in prior session; refine height + z-index) */
+  #side-panel {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important; right: 0 !important;
+    width: 100% !important;
+    height: 58vh !important;
+    max-height: 58vh !important;
+    transform: translateY(100%) !important;
+    z-index: 700 !important;
+    border-radius: 20px 20px 0 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: 1px solid rgba(255,255,255,0.1) !important;
+    box-shadow: 0 -20px 60px rgba(0,0,0,0.5) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+  #side-panel.open {
+    transform: translateY(0) !important;
+  }
+  #panel-overlay {
+    z-index: 690 !important;
+  }
+
+  /* 6. Geo-banner — above dock */
+  #geo-banner {
+    position: fixed !important;
+    bottom: 108px !important;    /* ticker(36)+dock(52)+gap(20) */
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 460 !important;
+    max-width: calc(100vw - 32px) !important;
+    white-space: nowrap !important;
+    font-size: 11px !important;
+    padding: 7px 12px !important;
+  }
+
+  /* 7. Kill feed — just below header */
+  #kill-feed-wrap {
+    position: fixed !important;
+    top: 56px !important;
+    right: 8px !important;
+    width: 200px !important;
+    z-index: 480 !important;
+  }
+
+  /* 8. PROMPT 7-9: War room and Viral overlays — full screen, above all */
+  .war-room-overlay {
+    position: fixed !important;
+    top: 48px !important;
+    bottom: 0 !important;
+    left: 0 !important; right: 0 !important;
+    width: 100% !important;
+    height: calc(100dvh - 48px) !important;
+    z-index: 800 !important;
+    overflow-y: auto !important;
+  }
+  .vt-panel {
+    position: fixed !important;
+    top: 48px !important;
+    bottom: 0 !important;
+    left: 0 !important; right: 0 !important;
+    width: 100% !important;
+    z-index: 800 !important;
+    overflow-y: auto !important;
+  }
+
+  /* 9. Stats bar — hide on mobile (too cramped) */
+  #stats-bar { display: none !important; }
   #CO, .coords { display: none !important; }
-  /* Stats bar: stays visible, float above globe */
-  #stats-bar {
-    top: 64px !important;
+
+  /* 10. PROMPT 6: Header compact — nav items as tiny pills */
+  .hdr-nav,
+  .hdr-sep,
+  .hdr-stat,
+  .hdr-pps-chip,
+  .hdr-updated { display: none !important; }
+  .hdr-logo-txt { font-size: 13px !important; letter-spacing: 0.08em !important; }
+  .hdr-live { font-size: 9px !important; gap: 4px !important; flex-shrink: 0 !important; }
+  .hdr-live-dot { width: 5px !important; height: 5px !important; }
+  .hdr-refresh-btn {
+    font-size: 9px !important;
+    padding: 4px 8px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    letter-spacing: 0.03em !important;
+  }
+
+  /* 11. PROMPT 4: Beacon containment inside globe */
+  /* #globe-container already has overflow:hidden — this is backup */
+  .beacon, [class*="beacon"],
+  .news-pin, [class*="pin"] {
+    contain: layout !important;
+  }
+
+  /* 12. PROMPT 5: Ticker label + content compact */
+  .ticker-label, .tk-label {
+    font-size: 8px !important;
+    padding: 0 8px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+  .ticker-item { font-size: 10px !important; }
+  .ticker-right-stat, [class*="ticker-stat"] {
+    font-size: 9px !important;
+    white-space: nowrap !important;
+    padding: 0 6px !important;
+    flex-shrink: 0 !important;
+  }
+}
+
+/* ── PROMPT 5: iPhone home-bar safe area ───────────────────────── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  @media (max-width: 768px) {
+    #ticker-bar {
+      padding-bottom: env(safe-area-inset-bottom) !important;
+      height: calc(36px + env(safe-area-inset-bottom)) !important;
+    }
+    .dock-wrap {
+      bottom: calc(44px + env(safe-area-inset-bottom)) !important;
+    }
+    #geo-banner {
+      bottom: calc(108px + env(safe-area-inset-bottom)) !important;
+    }
+    #globe-container {
+      bottom: calc(88px + env(safe-area-inset-bottom)) !important;
+    }
+  }
+}
+
+/* ── PROMPT 6: Header notch / Dynamic Island safe area ─────────── */
+@supports (padding-top: env(safe-area-inset-top)) {
+  @media (max-width: 768px) {
+    header {
+      padding-top: max(0px, env(safe-area-inset-top)) !important;
+      height: calc(48px + env(safe-area-inset-top)) !important;
+    }
+    #globe-container {
+      top: calc(48px + env(safe-area-inset-top)) !important;
+    }
   }
 }
 

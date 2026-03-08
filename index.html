@@ -407,6 +407,30 @@ if (_origRefreshClick) {
     }
   }, 5000);
 })();
+
+// ── PROMPT 3: Globe recenter on mobile ───────────────────────────────────
+(function() {
+  function recenterGlobe() {
+    if (window.innerWidth > 768) return;
+    var container = document.getElementById('globe-container');
+    if (!container) return;
+    var globeW = window.innerWidth;
+    var globeH = Math.max(window.innerHeight - 48 - 52 - 36, 240);
+    // Notify Globe.gl instance to resize if it's exposed
+    if (window.__globe && typeof window.__globe.width === 'function') {
+      try { window.__globe.width(globeW).height(globeH); } catch(e) {}
+    }
+    // Ensure canvas fills container
+    var canvas = container.querySelector('canvas');
+    if (canvas) {
+      canvas.style.width = '100%';
+      canvas.style.height = '100%';
+    }
+  }
+  window.addEventListener('load', function() { setTimeout(recenterGlobe, 700); });
+  window.addEventListener('resize', recenterGlobe);
+  window.addEventListener('orientationchange', function() { setTimeout(recenterGlobe, 400); });
+})();
 </script>
 </body>
 </html>
