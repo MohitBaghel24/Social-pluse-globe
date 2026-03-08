@@ -3968,6 +3968,7 @@ header {
   cursor:pointer; transition:all .15s; white-space:nowrap;
 }
 .hdr-refresh-btn:hover { border-color:var(--ln2); color:var(--fg); background:rgba(232,236,248,.03); }
+.hdr-refresh-btn.spinning { animation:spin .8s linear infinite; border-color:var(--ac); color:var(--ac); }
 
 /* ── 6. Dock ──────────────────────────────────────────────────── */
 .dock-wrap {

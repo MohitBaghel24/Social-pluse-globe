@@ -252,6 +252,11 @@
     if (window.GlobeModule?.globeInstance) {
       window.GlobeModule.globeInstance.controls().autoRotateSpeed = 0.6;
     }
+
+    // Reset nav active state back to Globe (first nav item)
+    document.querySelectorAll('.hdr-nav-item').forEach(b => b.classList.remove('active'));
+    const globeNavBtn = document.querySelector('.hdr-nav-item');
+    if (globeNavBtn) globeNavBtn.classList.add('active');
   }
 
   // ── Wire buttons ──────────────────────────────────────────────────────
