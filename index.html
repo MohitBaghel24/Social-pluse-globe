@@ -249,17 +249,7 @@
       if (pctEl) pctEl.textContent = pct + '%';
     })();
 
-    // ── LIVE button → flash/highlight the live feed panel ─────────────────
-    document.getElementById('live-indicator')?.addEventListener('click', function () {
-      const panel = document.getElementById('live-feed-panel');
-      if (!panel) return;
-      // Remove then re-add class to restart animation even if already flashing
-      panel.classList.remove('lf-flash');
-      // Force reflow so animation restarts
-      void panel.offsetWidth;
-      panel.classList.add('lf-flash');
-      setTimeout(() => panel.classList.remove('lf-flash'), 800);
-    });
+    // ── LIVE button → no panel (removed) ────────────────────────────────
     document.getElementById('live-indicator')?.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') this.click();
     });
@@ -296,15 +286,7 @@
     })();
   </script>
 
-<!-- ── Live Feed Panel ─────────────────────────── -->
-<div id="live-feed-panel" aria-label="Live updates feed" role="log" aria-live="polite">
-  <div class="lf-header">
-    <div class="lf-live-dot"></div>
-    <span class="lf-title">Live Feed</span>
-    <span class="lf-count" id="lf-count">—</span>
-  </div>
-  <div id="lf-items"></div>
-</div>
+<!-- Live Feed Panel removed -->
 
 <script>
 // ── Intro overlay force-dismiss safety (in case CSS animation doesn't fire) ──
