@@ -353,9 +353,11 @@ window._lastRefresh = window._lastRefresh || Date.now();
 setInterval(function() {
   var el = document.getElementById('hdr-upd-txt');
   if (!el) return;
-  var mins = Math.round((Date.now() - (window._lastRefresh||Date.now())) / 60000);
-  el.textContent = mins < 1 ? 'just now' : mins + ' min ago';
-}, 30000);
+  var elapsed = Date.now() - (window._lastRefresh || Date.now());
+  var mins = Math.round(elapsed / 60000);
+  var secs = Math.round(elapsed / 1000);
+  el.textContent = elapsed < 60000 ? secs + 's ago' : mins + ' min ago';
+}, 10000);
 // On manual refresh, reset timer
 var _origRefreshClick = document.getElementById('refresh-btn');
 if (_origRefreshClick) {
@@ -365,6 +367,27 @@ if (_origRefreshClick) {
     if (u) u.textContent = 'just now';
   });
 }
+// BUG 3: force-close war room on load (prevents iOS flash)
+(function() {
+  function forceCloseWarRoom() {
+    var wr = document.getElementById('war-room');
+    if (!wr) return;
+    wr.classList.remove('open');
+    wr.setAttribute('aria-hidden', 'true');
+  }
+  forceCloseWarRoom();
+  document.addEventListener('DOMContentLoaded', forceCloseWarRoom);
+  window.addEventListener('load', forceCloseWarRoom);
+})();
+// BUG 15: globe resize handler
+window.addEventListener('resize', function() {
+  var gm = window.GlobeModule;
+  if (!gm || !gm.globeInstance) return;
+  var c = document.getElementById('globe-container');
+  if (c && typeof gm.globeInstance.width === 'function') {
+    gm.globeInstance.width(c.clientWidth).height(c.clientHeight);
+  }
+});
 </script>
 </body>
 </html>

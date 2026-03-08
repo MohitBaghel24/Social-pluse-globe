@@ -1282,10 +1282,12 @@ body.war-room-active #war-panel,
   overflow: hidden;
   transition: right 0.5s cubic-bezier(0.22, 1, 0.36, 1);
   pointer-events: none;
+  visibility: hidden;
 }
 .war-room-overlay.open {
   right: 0;
   pointer-events: all;
+  visibility: visible;
 }
 
 /* Scanline CRT effect */
@@ -4158,6 +4160,16 @@ header { overflow: hidden !important; }
   #side-panel.open {
     transform: translateY(0) !important;
   }
+  #side-panel::before {
+    content: '' !important;
+    display: block !important;
+    width: 36px !important;
+    height: 4px !important;
+    background: rgba(255,255,255,0.25) !important;
+    border-radius: 2px !important;
+    margin: 10px auto 0 !important;
+    flex-shrink: 0 !important;
+  }
 
   /* Stats bar: smaller on tablet */
   #stats-bar {
@@ -4289,6 +4301,20 @@ header { overflow: hidden !important; }
     height: 36px !important;
     min-width: 36px !important;
     font-size: 16px !important;
+  }
+}
+
+/* ── Safe area insets for iPhone home indicator ─────────────────────── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  @media (max-width: 768px) {
+    .dock-wrap {
+      bottom: calc(8px + env(safe-area-inset-bottom)) !important;
+    }
+  }
+  @media (max-width: 480px) {
+    .dock-wrap {
+      bottom: calc(6px + env(safe-area-inset-bottom)) !important;
+    }
   }
 }
 

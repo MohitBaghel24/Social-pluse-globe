@@ -42,7 +42,7 @@
     // Country name + total
     document.getElementById("panel-country").textContent = data.name;
     document.getElementById("panel-total").innerHTML =
-      `<span class="total-num">${data.totalUsers.toLocaleString()}M</span><br/><span class="total-label">Total Social Media Users</span>`;
+      `<span class="total-num">${data.totalUsers.toLocaleString('en-US')}M</span><br/><span class="total-label">Total Social Media Users</span>`;
 
     // Bar chart
     try { buildChart(data.platforms); } catch(e) { console.warn('[Panel] chart error:', e); }

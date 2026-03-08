@@ -139,7 +139,7 @@
 
     beacons.forEach(b => {
       const sc = globe.getScreenCoords(b.lat, b.lng, 0.015);
-      if (sc && sc.x > 0 && sc.x < window.innerWidth && sc.y > 0 && sc.y < window.innerHeight) {
+      if (sc && sc.x > 0 && sc.x < window.innerWidth && sc.y > 60 && sc.y < window.innerHeight - 70) {
         b.el.style.display = 'block';
         b.el.style.left = sc.x + 'px';
         b.el.style.top  = sc.y + 'px';
