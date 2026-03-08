@@ -651,7 +651,29 @@
   }
 
   // Boot — GlobeModule is set inside initGlobe() after the instance exists
-  initGlobe().catch(console.error);
+  // Ensure container has explicit size before init
+  const _gc = document.getElementById("globe-container");
+  if (_gc) {
+    _gc.style.width  = _gc.style.width  || "100%";
+    _gc.style.height = _gc.style.height || "100%";
+    if (!_gc.offsetHeight) _gc.style.minHeight = "400px";
+  }
+
+  function safeInit() {
+    try {
+      initGlobe().catch(err => {
+        console.error("[Social Globe] Globe init failed:", err);
+      });
+    } catch (err) {
+      console.error("[Social Globe] Globe init threw synchronously:", err);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", safeInit);
+  } else {
+    safeInit();
+  }
 })();
 
 

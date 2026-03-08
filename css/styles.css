@@ -3536,7 +3536,6 @@ header button:hover,
    LIVE FEED PANEL
 ══════════════════════════════════════════════════════ */
 #live-feed-panel {
-  display: none !important; /* removed per user request */
   position: fixed;
   bottom: 96px;
   right: 24px;
@@ -3699,7 +3698,27 @@ header button:hover,
 
 /* ── Responsive ─────────────────────────────────────── */
 @media (max-width: 768px) {
-  #live-feed-panel { display: none; }
+  #live-feed-panel { width: calc(100vw - 32px); right: 16px; bottom: 90px; }
   #stats-bar { flex-direction: column; gap: 6px; }
   .stat-card { padding: 8px 12px; }
+}
+@media (max-width: 480px) {
+  /* hide live feed on small phones — too little room */
+  #live-feed-panel { display: none; }
+}
+
+/* ── Touch devices: hide custom cursor reticle ─────── */
+@media (hover: none) {
+  #reticle, .ret-dot, .ret-ring, .ret-scanline { display: none !important; }
+  * { cursor: default !important; }
+}
+
+/* ── LIVE indicator: click flash animation ──────────── */
+.lf-flash {
+  animation: lfFlash 0.8s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+}
+@keyframes lfFlash {
+  0%   { box-shadow: 0 0 0 0 rgba(34,211,238,0.7); }
+  70%  { box-shadow: 0 0 0 14px rgba(34,211,238,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,211,238,0); }
 }

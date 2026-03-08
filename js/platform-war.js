@@ -30,6 +30,13 @@
   const leaderboard  = document.getElementById("war-leaderboard");
   const cycleFill    = document.getElementById("war-cycle-fill");
 
+  // Abort silently if critical DOM is missing
+  if (!warBtn || !warPanel || !leaderboard || !cycleFill) {
+    console.warn("[PlatformWar] Missing DOM elements — module disabled.");
+    window.PlatformWar = { start() {}, stop() {} };
+    return;
+  }
+
   // ── Global totals per platform ────────────────────────────────────────
   function computeTotals() {
     const { SOCIAL_DATA } = window.SocialData;

@@ -373,7 +373,12 @@
 
   // ── Apply / remove viral arcs from globe ──────────────────────────────
   function applyArcs() {
-    window.GlobeModule?.setViralArcs?.(buildViralArcs());
+    if (window.GlobeModule?.setViralArcs) {
+      window.GlobeModule.setViralArcs(buildViralArcs());
+    } else {
+      // Globe not ready yet — retry after a short delay
+      setTimeout(applyArcs, 600);
+    }
   }
 
   function clearArcs() {

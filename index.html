@@ -53,12 +53,26 @@
     </div>
     <button id="refresh-btn" title="Refresh data" aria-label="Refresh data"><span class="icon" aria-hidden="true">↻</span> Refresh</button>
     <button id="war-room-btn" title="Enter WAR ROOM fullscreen mode"><span class="wr-btn-icon">☠</span> WAR ROOM</button>
+    <button id="war-btn" title="Toggle Platform War leaderboard" aria-pressed="false">⚔ PLATFORM WAR</button>
     <button id="vt-toggle-btn" title="Toggle Viral Tracker arcs" aria-pressed="false">⬡ VIRAL</button>
-    <div id="live-indicator" class="live-indicator" aria-label="Live breaking news" aria-hidden="true">
+    <div id="live-indicator" class="live-indicator" role="button" tabindex="0" aria-label="Live breaking news — click to scroll to feed" title="Live feed">
       <span class="live-dot"></span><span class="live-label">LIVE</span>
     </div>
   </div>
 </header>
+<!-- ── Platform War sliding panel ── -->
+<div id="war-panel" aria-hidden="true">
+  <div class="war-panel-header">
+    <span class="war-panel-title">⚔ PLATFORM WAR</span>
+    <div class="war-speed-group">
+      <button class="war-speed-btn active" data-ms="3000">1×</button>
+      <button class="war-speed-btn" data-ms="1500">2×</button>
+      <button class="war-speed-btn" data-ms="800">3×</button>
+    </div>
+  </div>
+  <div id="war-leaderboard"></div>
+  <div class="war-cycle-bar"><div id="war-cycle-fill"></div></div>
+</div>
 <div id="war-room" class="war-room-overlay" aria-hidden="true">
   <div class="wr-scanlines" aria-hidden="true"></div>
   <aside class="wr-dashboard">
@@ -83,9 +97,9 @@
 </div>
 <nav id="platform-toolbar" role="toolbar" aria-label="Filter globe by platform"></nav>
 <aside id="stats-bar" aria-label="Global statistics">
-  <div class="stat-card"><div class="val">5.24B</div><div class="lbl">Global Users</div></div>
-  <div class="stat-card"><div class="val">63.7%</div><div class="lbl">World Penetration</div></div>
-  <div class="stat-card"><div class="val">6h 37m</div><div class="lbl">Daily Avg. Use</div></div>
+  <div class="stat-card"><div class="val" id="stat-users">5.24B</div><div class="lbl">Global Users</div></div>
+  <div class="stat-card"><div class="val" id="stat-pct">63.7%</div><div class="lbl">World Penetration</div></div>
+  <div class="stat-card"><div class="val" id="stat-time">6h 37m</div><div class="lbl">Daily Avg. Use</div></div>
 </aside>
 <div id="legend" aria-label="Map colour legend">
   <div class="legend-title">Social Media Users</div>
@@ -159,6 +173,34 @@
   <script src="js/trending-sidebar.js"></script>
   <script src="js/breaking-news.js"></script>
   <script src="js/live-feed.js"></script>
+  <script src="js/platform-war.js"></script>
+  <script>
+    // ── Dynamic header stats from SOCIAL_DATA ──────────────────────────
+    (function initStats() {
+      const data = window.SocialData?.SOCIAL_DATA;
+      if (!data) return;
+      let total = 0;
+      Object.values(data).forEach(c => { total += (c.totalUsers || 0); });
+      const billions = (total / 1000).toFixed(2);
+      const pct = Math.round((total / 8200) * 100); // 8.2B world internet users
+      const el = document.getElementById('stat-users');
+      if (el) el.textContent = billions + 'B';
+      const pctEl = document.getElementById('stat-pct');
+      if (pctEl) pctEl.textContent = pct + '%';
+    })();
+
+    // ── LIVE button → scroll live feed into view ───────────────────────
+    document.getElementById('live-indicator')?.addEventListener('click', function () {
+      const panel = document.getElementById('live-feed-panel');
+      if (!panel) return;
+      panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      panel.classList.add('lf-flash');
+      setTimeout(() => panel.classList.remove('lf-flash'), 800);
+    });
+    document.getElementById('live-indicator')?.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') this.click();
+    });
+  </script>
 
 <!-- ── Live Feed Panel ─────────────────────────── -->
 <div id="live-feed-panel" aria-label="Live updates feed" role="log" aria-live="polite">
