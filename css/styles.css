@@ -4390,3 +4390,194 @@ header { overflow: hidden !important; }
   #kill-feed-wrap { width: 190px !important; right: 4px !important; }
 }
 
+/* =================================================================
+   MOBILE CRITICAL FIXES — Loader, Dock, Header, Geo-banner, Globe
+   ================================================================= */
+
+/* ── Progress bar inside loader ──────────────────────────────────── */
+.intro-bar {
+  width: min(220px, 60vw);
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.intro-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--ac, #4fffb0), rgba(79,255,176,0.4));
+  border-radius: 1px;
+  animation: introBarFill 2.2s cubic-bezier(0.4,0,0.2,1) 0.3s forwards;
+}
+@keyframes introBarFill {
+  0%   { width: 0%; }
+  60%  { width: 80%; }
+  90%  { width: 95%; }
+  100% { width: 100%; }
+}
+
+/* ── LOADER: mobile responsive ───────────────────────────────────── */
+@media (max-width: 768px) {
+  #intro-overlay {
+    padding: 24px !important;
+    gap: 14px !important;
+  }
+  .intro-title {
+    font-size: clamp(28px, 8vw, 48px) !important;
+    letter-spacing: clamp(0.08em, 1.5vw, 0.18em) !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .intro-subtitle {
+    font-size: clamp(9px, 2.5vw, 11px) !important;
+    letter-spacing: clamp(0.08em, 1vw, 0.18em) !important;
+    text-align: center !important;
+    padding: 0 16px !important;
+    line-height: 1.6 !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    max-width: 280px !important;
+  }
+  .intro-bar {
+    width: min(200px, 70vw) !important;
+  }
+}
+
+/* ── DOCK: compact on mobile ─────────────────────────────────────── */
+@media (max-width: 768px) {
+  .dock-wrap {
+    height: 52px !important;
+    padding: 0 10px !important;
+    gap: 2px !important;
+    border-radius: 26px !important;
+    bottom: 44px !important;
+    max-width: calc(100vw - 24px) !important;
+  }
+  .plat-btn {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 14px !important;
+    border-radius: 8px !important;
+    padding: 0 !important;
+    flex-shrink: 0 !important;
+  }
+  .plat-icon { font-size: 14px !important; }
+  .dock-extra-btn {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 14px !important;
+    border-radius: 8px !important;
+  }
+  .dock-sep-v { height: 18px !important; margin: 0 3px !important; }
+  /* Overflow-scroll if dock is too wide on very small phones */
+  #platform-toolbar {
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  #platform-toolbar::-webkit-scrollbar { display: none !important; }
+}
+
+/* ── HEADER: compact on mobile ───────────────────────────────────── */
+@media (max-width: 768px) {
+  header {
+    height: 52px !important;
+    min-height: 52px !important;
+    padding: 0 12px !important;
+    gap: 8px !important;
+    overflow: hidden !important;
+  }
+  .hdr-logo-ring {
+    width: 22px !important;
+    height: 22px !important;
+  }
+  .hdr-logo-txt {
+    font-size: 13px !important;
+    letter-spacing: 0.1em !important;
+  }
+  /* Nav, stats, separators already hidden at ≤900px breakpoint.
+     Ensure these are also hidden in the 768 range: */
+  .hdr-nav,
+  .hdr-sep,
+  .hdr-stat,
+  .hdr-pps-chip,
+  .hdr-updated { display: none !important; }
+  /* Keep live chip but compact */
+  .hdr-live {
+    font-size: 9px !important;
+    gap: 5px !important;
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+  .hdr-live-dot {
+    width: 5px !important;
+    height: 5px !important;
+  }
+  /* UTC chip: keep but smaller */
+  .hdr-stat:last-of-type {
+    display: flex !important;
+    flex-shrink: 0 !important;
+  }
+  .hdr-stat:last-of-type .hdr-stat-v { font-size: 11px !important; }
+  .hdr-stat:last-of-type .hdr-stat-l { display: none !important; }
+  /* Refresh button: compact but visible */
+  .hdr-refresh-btn {
+    font-size: 10px !important;
+    padding: 4px 8px !important;
+    letter-spacing: 0.04em !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+}
+
+/* iPhone notch / Dynamic Island safe area */
+@supports (padding-top: env(safe-area-inset-top)) {
+  @media (max-width: 768px) {
+    header {
+      padding-top: max(0px, env(safe-area-inset-top)) !important;
+      height: calc(52px + env(safe-area-inset-top)) !important;
+    }
+  }
+}
+
+/* ── GEO-BANNER: above dock + ticker on mobile ───────────────────── */
+@media (max-width: 768px) {
+  #geo-banner {
+    bottom: 110px !important;   /* dock(52) + ticker(36) + gap(22) */
+    max-width: calc(100vw - 32px) !important;
+    font-size: 11px !important;
+    padding: 7px 12px !important;
+    gap: 7px !important;
+    z-index: 200 !important;
+    white-space: nowrap !important;
+  }
+  #geo-open-btn {
+    font-size: 10px !important;
+    padding: 3px 9px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+}
+
+/* ── GLOBE CONTAINER: constrained on mobile ──────────────────────── */
+/* Leave room: header(52px top) + dock(52px) + ticker(36px) = 140px bottom */
+@media (max-width: 768px) {
+  #globe-container {
+    top: 54px !important;
+    bottom: 90px !important;  /* dock + ticker approx */
+    left: 0 !important;
+    right: 0 !important;
+    min-height: 260px !important;
+  }
+  /* Adjust coords display (already hidden via #CO above) */
+  #CO, .coords { display: none !important; }
+  /* Stats bar: stays visible, float above globe */
+  #stats-bar {
+    top: 64px !important;
+  }
+}
+

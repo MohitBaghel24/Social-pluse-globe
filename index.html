@@ -34,6 +34,7 @@
 <div id="intro-overlay" aria-hidden="true">
   <div class="intro-title">SOCIAL GLOBE</div>
   <div class="intro-subtitle">Real-Time World Social Media Intelligence</div>
+  <div class="intro-bar"><div class="intro-fill"></div></div>
 </div>
 <canvas id="star-canvas" aria-hidden="true"></canvas>
 <div id="globe-container" role="img" aria-label="3D interactive globe showing social media usage by country"></div>
@@ -381,6 +382,31 @@ if (_origRefreshClick) {
     if (u) u.textContent = 'just now';
   });
 }
+
+// ── Loader force-dismiss safety ───────────────────────────────────────
+(function() {
+  function dismissLoader() {
+    var ldr = document.getElementById('intro-overlay');
+    if (ldr && ldr.parentNode) {
+      ldr.style.transition = 'opacity 0.8s ease';
+      ldr.style.opacity = '0';
+      ldr.style.pointerEvents = 'none';
+      setTimeout(function() { if (ldr.parentNode) ldr.remove(); }, 900);
+    }
+  }
+  // Primary: dismiss after 2.4s (globe CDN usually loads by then)
+  setTimeout(dismissLoader, 2400);
+  // Safety fallback: force-dismiss after 5s no matter what
+  setTimeout(function() {
+    var ldr = document.getElementById('intro-overlay');
+    if (ldr && ldr.parentNode) {
+      ldr.style.opacity = '0';
+      ldr.style.pointerEvents = 'none';
+      setTimeout(function() { if (ldr.parentNode) ldr.remove(); }, 500);
+      console.warn('Loader force-dismissed by safety timeout');
+    }
+  }, 5000);
+})();
 </script>
 </body>
 </html>
