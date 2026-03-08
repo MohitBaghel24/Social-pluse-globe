@@ -8,23 +8,28 @@
 
   // ── Static global news pool (shown when country has little data) ───────
   const GLOBAL_NEWS = [
-    { title: "TikTok reaches 2 billion monthly active users globally",       flag: "🌍", time: "2h ago" },
-    { title: "Meta expands AI features across Facebook, Instagram, WhatsApp", flag: "🤖", time: "3h ago" },
-    { title: "YouTube Shorts daily views surpass Netflix worldwide",          flag: "▶", time: "4h ago" },
-    { title: "WhatsApp rolls out end-to-end encrypted group voice notes",     flag: "💬", time: "5h ago" },
-    { title: "LinkedIn hits 1.1 billion registered members",                 flag: "💼", time: "6h ago" },
-    { title: "Snapchat introduces AR spatial lenses on iOS 18",              flag: "👻", time: "7h ago" },
-    { title: "X (Twitter) tests 25,000-character long-form posts",           flag: "✕",  time: "8h ago" },
-    { title: "Instagram Reels ad revenue exceeds YouTube Shorts for first time", flag: "📸", time: "9h ago" },
-    { title: "WeChat Pay expands to 12 new countries in Africa and SE Asia",  flag: "⊕", time: "10h ago" },
-    { title: "Pinterest launches AI-powered shopping curation engine",        flag: "📌", time: "11h ago" },
-    { title: "Telegram Premium subscribers top 10 million worldwide",         flag: "✈", time: "12h ago" },
-    { title: "Short-form video drives 68% of all mobile social engagement",   flag: "📱", time: "14h ago" },
-    { title: "Social commerce GMV hits $1.3 trillion — led by TikTok Shop",  flag: "🛍", time: "16h ago" },
-    { title: "Gen Z spends avg 8.5 h/day on social apps — new DataReportal", flag: "📊", time: "18h ago" },
-    { title: "BeReal pivots to social aggregator after acquisition",          flag: "📷", time: "20h ago" },
-    { title: "Discord hits 500M registered accounts, monetises communities",  flag: "🎮", time: "22h ago" },
+    { title: "TikTok reaches 2 billion monthly active users globally",            flag: "🌍", time: "2h ago",  query: "TikTok 2 billion users" },
+    { title: "Meta expands AI features across Facebook, Instagram, WhatsApp",     flag: "🤖", time: "3h ago",  query: "Meta AI features Facebook Instagram" },
+    { title: "YouTube Shorts daily views surpass Netflix worldwide",               flag: "▶️", time: "4h ago",  query: "YouTube Shorts surpass Netflix" },
+    { title: "WhatsApp rolls out end-to-end encrypted group voice notes",          flag: "💬", time: "5h ago",  query: "WhatsApp encrypted voice notes" },
+    { title: "LinkedIn hits 1.1 billion registered members",                       flag: "💼", time: "6h ago",  query: "LinkedIn 1 billion members" },
+    { title: "Snapchat introduces AR spatial lenses on iOS 18",                    flag: "👻", time: "7h ago",  query: "Snapchat AR spatial lenses" },
+    { title: "X (Twitter) tests 25,000-character long-form posts",                 flag: "✕",  time: "8h ago",  query: "X Twitter long form posts" },
+    { title: "Instagram Reels ad revenue exceeds YouTube Shorts for first time",   flag: "📸", time: "9h ago",  query: "Instagram Reels ad revenue YouTube Shorts" },
+    { title: "WeChat Pay expands to 12 new countries in Africa and SE Asia",       flag: "⊕", time: "10h ago", query: "WeChat Pay expansion Africa" },
+    { title: "Pinterest launches AI-powered shopping curation engine",             flag: "📌", time: "11h ago", query: "Pinterest AI shopping" },
+    { title: "Telegram Premium subscribers top 10 million worldwide",              flag: "✈️", time: "12h ago", query: "Telegram Premium 10 million" },
+    { title: "Short-form video drives 68% of all mobile social engagement",        flag: "📱", time: "14h ago", query: "short-form video mobile social media" },
+    { title: "Social commerce GMV hits $1.3 trillion — led by TikTok Shop",        flag: "🛍️", time: "16h ago", query: "social commerce TikTok Shop GMV" },
+    { title: "Gen Z spends avg 8.5 h/day on social apps — new DataReportal",       flag: "📊", time: "18h ago", query: "Gen Z social media hours DataReportal" },
+    { title: "BeReal pivots to social aggregator after acquisition",               flag: "📷", time: "20h ago", query: "BeReal social aggregator" },
+    { title: "Discord hits 500M registered accounts, monetises communities",        flag: "🎮", time: "22h ago", query: "Discord 500 million accounts" },
   ];
+
+  // ── Helper: build a Google News search URL ──────────────────────────
+  function newsUrl(query) {
+    return `https://news.google.com/search?q=${encodeURIComponent(query)}&hl=en`;
+  }
 
   // ── State ─────────────────────────────────────────────────────────────
   let currentIso2  = null;
@@ -56,26 +61,38 @@
     if (load) load.style.display = 'none';
     list.innerHTML = '';
 
-    // Country trending topics first, then pad with global news
+    const countryName = currentData?.name || '';
+
+    // Country trending topics first (link to Google News with country context)
     const countryTopics = (currentData?.trending || []).map((t, i) => ({
       title: t,
       flag: '🔥',
       time: `${(i + 1) * 2}m ago`,
       local: true,
+      url: newsUrl(`${t} ${countryName}`),
     }));
-    const globalItems = GLOBAL_NEWS.slice(0, Math.max(0, 10 - countryTopics.length));
+    const globalItems = GLOBAL_NEWS.slice(0, Math.max(0, 10 - countryTopics.length))
+      .map(item => ({ ...item, local: false, url: newsUrl(item.query || item.title) }));
     const items = [...countryTopics, ...globalItems];
 
     items.forEach(item => {
-      const card = document.createElement('div');
-      card.className = 'tn-card';
+      const card = document.createElement('a');
+      card.className = 'tn-card tn-card--link';
+      card.href = item.url;
+      card.target = '_blank';
+      card.rel = 'noopener noreferrer';
+      card.title = 'Open in Google News';
       card.innerHTML = `
         <div class="tn-card-body">
           <div class="tn-content">
-            <div class="tn-title" style="color:${item.local ? 'var(--cyan)' : 'var(--text)'}">${item.flag} ${item.title}</div>
+            <div class="tn-title" style="color:${item.local ? 'var(--cyan)' : 'var(--text)'}">
+              ${item.flag} ${item.title}
+              <span class="tn-open-icon">↗</span>
+            </div>
             <div class="tn-meta">
-              <span class="tn-tag">${item.local ? (currentData?.name || 'Local') : 'Global'}</span>
+              <span class="tn-tag">${item.local ? countryName || 'Local' : 'Global'}</span>
               <span class="tn-time">${item.time}</span>
+              <span class="tn-source-badge">Google News</span>
             </div>
           </div>
         </div>`;
@@ -163,6 +180,17 @@
   }
 
   // ── Tab 3: Platform News — platform breakdown from SOCIAL_DATA ──────────
+  const PLATFORM_URLS = {
+    Facebook: 'https://www.facebook.com', Instagram: 'https://www.instagram.com',
+    TikTok: 'https://www.tiktok.com', YouTube: 'https://www.youtube.com',
+    WhatsApp: 'https://www.whatsapp.com', Twitter: 'https://x.com',
+    Snapchat: 'https://www.snapchat.com', LinkedIn: 'https://www.linkedin.com',
+    Pinterest: 'https://www.pinterest.com', WeChat: 'https://www.wechat.com',
+    Telegram: 'https://telegram.org', Reddit: 'https://www.reddit.com',
+    Discord: 'https://discord.com', VK: 'https://vk.com',
+    Line: 'https://line.me', Weibo: 'https://weibo.com',
+  };
+
   function loadPlatform() {
     const list = document.getElementById('pn-list');
     const load = document.getElementById('pn-loading');
@@ -185,14 +213,19 @@
     sorted.forEach(([platform, users], i) => {
       const color = PLATFORM_COLORS[platform] || '#22D3EE';
       const pct   = Math.round((users / total) * 100);
-      const card  = document.createElement('div');
-      card.className = 'tn-card';
-      card.style.cssText = `border-left: 3px solid ${color}; margin-bottom: 6px;`;
+      const url   = PLATFORM_URLS[platform] || `https://www.google.com/search?q=${encodeURIComponent(platform)}+social+media`;
+      const card  = document.createElement('a');
+      card.className = 'tn-card tn-card--link';
+      card.href = url;
+      card.target = '_blank';
+      card.rel = 'noopener noreferrer';
+      card.style.cssText = `border-left: 3px solid ${color}; margin-bottom: 6px; display: block;`;
       card.innerHTML = `
         <div class="tn-card-body" style="padding: 8px 10px;">
           <div class="tn-content">
             <div class="tn-title" style="color:${color}; font-size:0.82rem;">
               #${i + 1} ${platform}
+              <span class="tn-open-icon">↗</span>
             </div>
             <div class="tn-meta" style="margin-top:4px;">
               <span class="tn-upvotes" style="color:${color}">${users}M users</span>

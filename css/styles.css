@@ -1641,9 +1641,14 @@ body.war-room-active #ticker-bar { display: none !important; }
   background: rgba(0,0,0,0.3);
   border-bottom: 1px solid rgba(0,245,255,0.12);
   flex-shrink: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.panel-tabs::-webkit-scrollbar { display: none; }
 .ptab {
-  flex: 1;
+  flex: 1 1 auto;
+  min-width: 0;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
@@ -1651,10 +1656,11 @@ body.war-room-active #ticker-bar { display: none !important; }
   font-family: 'Share Tech Mono', monospace;
   font-size: 0.6rem;
   letter-spacing: 0.04em;
-  padding: 5px 2px 6px;
+  padding: 5px 4px 6px;
   cursor: pointer;
   transition: color 0.2s, border-color 0.2s;
   white-space: nowrap;
+  text-align: center;
 }
 .ptab:hover  { color: #BF5AF2; }
 .ptab--active,
@@ -1707,11 +1713,34 @@ body.war-room-active #ticker-bar { display: none !important; }
   padding: 8px;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  text-decoration: none;
+  color: inherit;
 }
 .tn-card:hover {
   background: rgba(0,245,255,0.09);
   border-color: rgba(0,245,255,0.3);
   transform: translateY(-1px);
+}
+.tn-card--link { display: block; }
+.tn-card--link:hover .tn-open-icon { opacity: 1; transform: translate(1px,-1px); }
+.tn-open-icon {
+  display: inline-block;
+  font-size: 0.6rem;
+  opacity: 0.4;
+  margin-left: 4px;
+  transition: opacity 0.15s, transform 0.15s;
+  color: var(--cyan);
+  vertical-align: middle;
+}
+.tn-source-badge {
+  font-size: 0.52rem;
+  font-family: 'Share Tech Mono', monospace;
+  color: rgba(0,245,255,0.4);
+  background: rgba(0,245,255,0.07);
+  border: 1px solid rgba(0,245,255,0.15);
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin-left: auto;
 }
 .tn-thumb {
   width: 52px;
@@ -3340,18 +3369,26 @@ header button:hover,
   background: transparent !important;
   gap: 2px !important;
   padding: 4px !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none !important;
 }
+.panel-tabs::-webkit-scrollbar { display: none !important; }
 .ptab {
   font-family: var(--ff) !important;
-  font-size: 0.72rem !important;
+  font-size: 0.7rem !important;
   font-weight: 500 !important;
   color: var(--muted) !important;
   background: transparent !important;
   border: none !important;
   border-radius: 8px !important;
-  padding: 6px 12px !important;
+  padding: 6px 8px !important;
   transition: background 0.15s, color 0.15s !important;
   box-shadow: none !important;
+  white-space: nowrap !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  text-align: center !important;
 }
 .ptab:hover { background: var(--glass-hover) !important; color: var(--text) !important; }
 .ptab--active {
