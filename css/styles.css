@@ -3348,6 +3348,8 @@ header button:hover,
   border-left: 1px solid var(--glass-border) !important;
   border-radius: 0 !important;
   box-shadow: none !important;
+  top: 54px !important;
+  height: calc(100% - 54px) !important;
 }
 #panel-overlay {
   background: rgba(0,0,0,0.5) !important;
@@ -4231,6 +4233,16 @@ header {
 .kf-header { font-family: var(--fm) !important; color: var(--rd) !important; }
 
 /* ── 16. Responsive ───────────────────────────────────────────── */
+@media (max-width: 1280px) {
+  /* Laptop: hide verbose right-cluster items to prevent centered nav overlap */
+  .hdr-updated { display: none !important; }
+}
+@media (max-width: 1100px) {
+  /* Smaller laptop: also hide Users stat + compress remaining items */
+  .hdr-stat:first-of-type { display: none !important; }
+  .hdr-pps-chip { padding: 4px 8px !important; }
+  .hdr-nav-item { padding: 5px 9px !important; }
+}
 @media (max-width: 900px) {
   .hdr-nav { display: none !important; }
   .hdr-pps-chip { display: none !important; }
