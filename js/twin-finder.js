@@ -261,12 +261,20 @@
         </div>
 
         <div class="res-actions">
-           <button class="res-btn sec" onclick="window.TwinFinder.download('${twin.flag}', '${twin.country}', ${pct})">📥 Save</button>
-           <button class="res-btn pri" onclick="window.TwinFinder.goto('${twin.iso}', ${twin.lat}, ${twin.lng})">🌍 View on Globe</button>
+           <button class="res-btn sec" id="res-save-btn">📥 Save</button>
+           <button class="res-btn pri" id="res-globe-btn">🌍 View on Globe</button>
         </div>
-        <div class="res-sub" onclick="window.TwinFinder.retry()">🔄 Retake Test</div>
+        <div class="res-sub" id="res-retry-btn">🔄 Retake Test</div>
       </div>
     `;
+
+    // Wire buttons via event listeners (avoids inline onclick XSS risk)
+    document.getElementById('res-save-btn')?.addEventListener('click', () =>
+      window.TwinFinder.download(twin.flag, twin.country, pct));
+    document.getElementById('res-globe-btn')?.addEventListener('click', () =>
+      window.TwinFinder.goto(twin.iso, twin.lat, twin.lng));
+    document.getElementById('res-retry-btn')?.addEventListener('click', () =>
+      window.TwinFinder.retry());
 
     // Draw Radar
     setTimeout(() => drawRadar(twin), 50);

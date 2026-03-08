@@ -12,7 +12,7 @@
   const closeBtn   = document.getElementById("panel-close");
   const overlay    = document.getElementById("panel-overlay");
 
-  closeBtn.addEventListener("click", close);
+  closeBtn?.addEventListener("click", close);
   overlay.addEventListener("click", close);
 
   function open(iso2, data) {

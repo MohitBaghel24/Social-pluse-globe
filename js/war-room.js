@@ -224,11 +224,6 @@
     feedItems = buildInitialFeed();
     renderFeed();
 
-    // Slow globe spin
-    if (window.GlobeModule?.globeInstance) {
-      window.GlobeModule.globeInstance.controls().autoRotateSpeed = 0.3;
-    }
-
     // Show timeline scrubber
     window.TimelineScrubber?.show();
   }
@@ -248,10 +243,6 @@
     window.TimelineScrubber?.hide();
     window.BattlePrediction?.hidePanel();
     window.BattlePrediction?.cleanupTargetEls();
-
-    if (window.GlobeModule?.globeInstance) {
-      window.GlobeModule.globeInstance.controls().autoRotateSpeed = 0.6;
-    }
 
     // Reset nav active state back to Globe (first nav item)
     document.querySelectorAll('.hdr-nav-item').forEach(b => b.classList.remove('active'));

@@ -93,7 +93,6 @@
       intensity: 2,
       legs: [
         { from:"US", to:"NG", days:6 },
-        { from:"NG", to:"GH", days:3 },
         { from:"US", to:"GB", days:4 },
         { from:"GB", to:"ZA", days:5 },
       ],

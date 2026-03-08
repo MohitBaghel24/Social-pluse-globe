@@ -251,7 +251,7 @@
     ES:{lat:40,lng:-4}, IT:{lat:42,lng:12}, NL:{lat:52,lng:5},
     SE:{lat:62,lng:15}, MY:{lat:4,lng:109}, SG:{lat:1,lng:104},
     TW:{lat:23,lng:121}, CO:{lat:4,lng:-74}, PE:{lat:-10,lng:-76},
-    NZ:{lat:-41,lng:174}, BD:{lat:24,lng:90}, UA:{lat:49,lng:32},
+    NZ:{lat:-41,lng:174}, BD:{lat:24,lng:90},
   };
 
   const targetEls = {};

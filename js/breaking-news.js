@@ -7,10 +7,6 @@
 (function () {
   const { SOCIAL_DATA } = window.SocialData;
 
-  const CLAUDE_API  = 'https://api.anthropic.com/v1/messages';
-  const CLAUDE_MODEL = 'claude-3-haiku-20240307';
-  const getApiKey   = () => localStorage.getItem('bp_claude_key') || '';
-
   const MAX_BEACONS    = 5;
   const MIN_UPVOTES    = 5000;
   const FETCH_INTERVAL = 5 * 60 * 1000;   // 5 minutes
@@ -200,34 +196,6 @@
     // Always use local fallback — Anthropic API is CORS-blocked on GitHub Pages
     const result = localImpactFallback(post.title, iso2, countryData, sorted);
     renderImpactCard(container, result, sorted);
-  }
-
-  async function callClaudeImpact(headline, countryName, platformData, apiKey) {
-    const prompt =
-      `Given this breaking news headline about ${countryName}: "${headline}"\n` +
-      `And this country's top social media platforms: ${platformData}\n\n` +
-      `In 1-2 sentences, explain how this news might affect social media activity in ${countryName} today. ` +
-      `Which platform will see the most spike in activity and why?`;
-    try {
-      const res  = await fetch(CLAUDE_API, {
-        method: 'POST',
-        headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens: 180,
-          messages: [{ role: 'user', content: prompt }] }),
-      });
-      const data = await res.json();
-      const text = data?.content?.[0]?.text?.trim() || '';
-      if (!text) throw new Error('empty');
-      const platform = extractPlatformFromText(text) || 'X/Twitter';
-      return { text, platform, isAI: true };
-    } catch (_) {
-      return null;
-    }
   }
 
   function extractPlatformFromText(text) {
