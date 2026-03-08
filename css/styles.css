@@ -4142,6 +4142,16 @@ header {
   display: flex !important; align-items: center !important;
   z-index: 200 !important; overflow: hidden !important;
 }
+.ticker-viewport {
+  flex: 1 1 0 !important; overflow: hidden !important;
+  position: relative !important; height: 100% !important;
+  display: flex !important; align-items: center !important;
+}
+#ticker-track {
+  display: flex !important; align-items: center !important;
+  white-space: nowrap !important;
+  will-change: transform !important;
+}
 .ticker-live-pill {
   display: flex; align-items: center; gap: 6px;
   padding: 0 16px; border-right: 1px solid var(--ln);
@@ -4264,4 +4274,71 @@ header {
   #stats-bar { display: none !important; }
   #legend { display: none !important; }
   #click-hint { display: none !important; }
+}
+
+/* ── BUG 9: Mobile polish ──────────────────────────────────────────── */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Ensure canvas always fills its container on all devices */
+#globe-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+}
+
+/* Thin scrollbars for panel overlays */
+#side-panel, #vt-panel, #war-room-overlay {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(79,255,176,0.15) transparent;
+}
+#side-panel::-webkit-scrollbar,
+#vt-panel::-webkit-scrollbar,
+#war-room-overlay::-webkit-scrollbar {
+  width: 4px;
+}
+#side-panel::-webkit-scrollbar-thumb,
+#vt-panel::-webkit-scrollbar-thumb,
+#war-room-overlay::-webkit-scrollbar-thumb {
+  background: rgba(79,255,176,0.2);
+  border-radius: 4px;
+}
+
+/* Prevent country name from overflowing header */
+#panel-country {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+}
+
+@media (max-width: 768px) {
+  /* Side panel full-width on small screens */
+  #side-panel {
+    width: 100vw !important;
+    left: 0 !important;
+    right: 0 !important;
+    border-radius: 0 !important;
+  }
+  /* Kill feed smaller on mobile */
+  #kill-feed-wrap {
+    max-width: calc(100vw - 24px) !important;
+    right: 12px !important;
+    left: 12px !important;
+  }
+  .kf-entry { font-size: 11px !important; }
+}
+
+/* ── BUG 10: Desktop polish at 1024–1366px ─────────────────────────── */
+@media (min-width: 1024px) and (max-width: 1366px) {
+  /* Slightly narrower side panel on 1280-class displays */
+  #side-panel { width: 340px !important; }
+  /* Ensure globe doesn't get clipped when panel is open */
+  #globe-container { transition: width 0.3s ease !important; }
+  /* Tighten header stats to fit more items */
+  .hdr-stat { font-size: 11px !important; }
+  .hdr-pps-chip { padding: 3px 8px !important; }
 }

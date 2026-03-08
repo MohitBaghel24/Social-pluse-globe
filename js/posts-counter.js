@@ -22,22 +22,17 @@
 
   const BASE_TOTAL = PLATFORMS.reduce((s, p) => s + p.rate, 0);
 
-  // ── Mount counter HTML next to header-meta's first child ─────────────
+  // ── Mount counter: create hidden #pps-number element ─────────────────
+  // (No longer needs .header-meta — that element was removed in redesign)
   function init() {
-    const headerMeta = document.querySelector('.header-meta');
-    if (!headerMeta) return;
-
-    const wrap = document.createElement('div');
-    wrap.id = 'posts-counter';
-    wrap.innerHTML = `
-      <div class="pps-main">
-        <span id="pps-number">0</span>
-        <span class="pps-unit">POSTS/SEC</span>
-      </div>
-      <div class="pps-breakdown" id="pps-breakdown"></div>
-    `;
-    // Insert as first child so it appears at the left edge of header-meta
-    headerMeta.insertBefore(wrap, headerMeta.firstChild);
+    // Reuse existing element if already created (e.g. by inline script)
+    let numberEl = document.getElementById('pps-number');
+    if (!numberEl) {
+      numberEl = document.createElement('span');
+      numberEl.id = 'pps-number';
+      numberEl.style.cssText = 'position:absolute;left:-9999px;width:0;height:0;overflow:hidden;pointer-events:none';
+      document.body.appendChild(numberEl);
+    }
 
     // ── Ramp-up animation on page load (0 → BASE_TOTAL in ~1.8 s) ──────
     let displayed = 0;
@@ -65,8 +60,15 @@
   }
 
   function setCount(n) {
+    // Always use en-US to avoid Indian/European number formats (e.g. "1,18,732")
+    const formatted = Math.round(n).toLocaleString('en-US');
     const el = document.getElementById('pps-number');
-    if (el) el.textContent = n.toLocaleString();
+    if (el) el.textContent = formatted;
+    // Directly update header + ticker so bridge poll isn't needed
+    const hdrEl = document.getElementById('hdr-pps-val');
+    if (hdrEl) hdrEl.textContent = formatted;
+    const tkrEl = document.getElementById('tkr-pps');
+    if (tkrEl) tkrEl.textContent = formatted;
   }
 
   function updateBreakdown(idx) {

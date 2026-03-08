@@ -204,14 +204,22 @@
   // Fires independent kill events every ~6s so the feed is always lively.
   const AUTO_PLATFORMS = ["Facebook","Instagram","YouTube","TikTok","WhatsApp","X/Twitter","Snapchat","WeChat"];
   function autoTick() {
-    // Only fire when feed wrap is visible (Platform War active)
-    const wrap = document.getElementById("kill-feed-wrap");
-    if (!wrap || !wrap.classList.contains("visible")) return;
-    // Random attacker / victim pair
+    // Random attacker / victim pair (no `visible` guard — feed is always on)
     const shuffled = AUTO_PLATFORMS.slice().sort(() => Math.random() - 0.5);
     onWarAdvance(shuffled[0]);
   }
   setInterval(autoTick, 6200);
+
+  // Auto-show kill feed 5 s after page load so it's always active
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const wrap = document.getElementById("kill-feed-wrap");
+      if (wrap && !wrap.classList.contains("visible")) {
+        wrap.classList.add("visible");
+      }
+      autoTick(); // kick off first entry immediately
+    }, 5000);
+  });
 })();
 
 

@@ -245,10 +245,11 @@
 
   async function loadGeoJson() {
     // Try multiple mirror URLs in case one is down/rate-limited
+    // jsDelivr first — works on GitHub Pages without CORS issues
     const urls = [
-      "https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson",
-      "https://raw.githubusercontent.com/vasturiano/globe.gl/main/example/datasets/ne_110m_admin_0_countries.geojson",
       "https://cdn.jsdelivr.net/gh/vasturiano/globe.gl@master/example/datasets/ne_110m_admin_0_countries.geojson",
+      "https://unpkg.com/globe.gl/example/datasets/ne_110m_admin_0_countries.geojson",
+      "https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson",
     ];
     let lastErr;
     for (const url of urls) {
@@ -680,11 +681,8 @@
     }
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", safeInit);
-  } else {
-    safeInit();
-  }
+  // Use window.load to guarantee Globe.gl CDN has fully executed before init
+  window.addEventListener("load", safeInit);
 })();
 
 
