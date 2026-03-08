@@ -72,6 +72,7 @@
   const maxHP    = Math.max(...fighters.map(f => f.hp), 1);
 
   function getGlobalDominator() {
+    if (!fighters.length) return WAR_PLATFORMS[0];
     return fighters.reduce((best, f) => f.kills > best.kills ? f : best, fighters[0]);
   }
 

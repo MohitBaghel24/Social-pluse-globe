@@ -1,46 +1,28 @@
 // ============================================================
-//  Social Pulse Globe — Reddit Trending Ticker Module
+//  Social Pulse Globe — Trending Ticker (static, no API calls)
 // ============================================================
 
 (function () {
-  const SUBREDDITS = [
-    { sub: "worldnews",  flag: "🌍", label: "World" },
-    { sub: "technology", flag: "💻", label: "Tech" },
-    { sub: "india",      flag: "🇮🇳", label: "India" },
-    { sub: "europe",     flag: "🇪🇺", label: "Europe" },
-    { sub: "science",    flag: "🔬", label: "Science" },
-  ];
-
   const tickerTrack = document.getElementById("ticker-track");
-  const CACHE_KEY   = "spg_ticker_cache";
-  const CACHE_TTL   = 20 * 60 * 1000; // 20 minutes
-
-  async function fetchSubreddit({ sub, flag, label }) {
-    try {
-      const res  = await fetch(`https://www.reddit.com/r/${sub}/hot.json?limit=6`, {
-        headers: { "Accept": "application/json" },
-      });
-      const json = await res.json();
-      return json.data.children
-        .map(c => c.data)
-        .filter(p => !p.stickied)
-        .slice(0, 4)
-        .map(p => ({ title: p.title, flag, label, url: `https://reddit.com${p.permalink}` }));
-    } catch {
-      return [];
-    }
-  }
+  if (!tickerTrack) return;   // ticker bar not present — abort silently
 
   function buildFallbackItems() {
     return [
-      { title: "Global social media usage hits new record in 2026", flag: "🌍", label: "World" },
-      { title: "AI-generated content surges across all platforms",   flag: "💻", label: "Tech" },
-      { title: "Short-form video dominates mobile engagement",       flag: "🌍", label: "World" },
-      { title: "WhatsApp introduces encrypted group stories",        flag: "💬", label: "Tech" },
-      { title: "TikTok reaches 2 billion monthly active users",      flag: "🎵", label: "World" },
-      { title: "X/Twitter usage rebounds in Europe and LATAM",       flag: "🐦", label: "Tech" },
-      { title: "YouTube Shorts surpasses Netflix in daily watch time",flag: "▶️", label: "Tech" },
-      { title: "Instagram rolls out AI avatar DMs",                  flag: "📸", label: "Tech" },
+      { title: "Global social media usage hits new record in 2026",            flag: "🌍", label: "World" },
+      { title: "AI-generated content surges across all platforms",              flag: "💻", label: "Tech"  },
+      { title: "Short-form video dominates mobile engagement",                  flag: "🌍", label: "World" },
+      { title: "WhatsApp introduces encrypted group stories",                   flag: "💬", label: "Tech"  },
+      { title: "TikTok reaches 2 billion monthly active users",                 flag: "🎵", label: "World" },
+      { title: "X/Twitter usage rebounds in Europe and LATAM",                 flag: "🐦", label: "Tech"  },
+      { title: "YouTube Shorts surpasses Netflix in daily watch time",          flag: "▶", label: "Tech"  },
+      { title: "Instagram rolls out AI avatar DMs globally",                    flag: "📸", label: "Tech"  },
+      { title: "Meta reports record ad revenue driven by AI targeting",         flag: "📘", label: "World" },
+      { title: "Snapchat AR glasses OS ships to enterprise developers",         flag: "👻", label: "Tech"  },
+      { title: "LinkedIn crosses 1.1B registered members milestone",            flag: "💼", label: "World" },
+      { title: "BeReal acquisition: platform pivots to social aggregator",      flag: "📷", label: "Tech"  },
+      { title: "Pinterest AI shopping engine drives 40% revenue uplift",        flag: "📌", label: "Tech"  },
+      { title: "Telegram Premium hits 10M subscribers worldwide",               flag: "✈", label: "World" },
+      { title: "Social commerce global GMV forecast at $1.3 trillion for 2026", flag: "🛍", label: "World" },
     ];
   }
 
@@ -49,49 +31,22 @@
     const all = [...items, ...items];
     tickerTrack.innerHTML = all
       .map(item => `
-        <a class="ticker-item" href="${item.url || '#'}" target="_blank" rel="noopener">
+        <span class="ticker-item">
           <span class="ticker-flag">${item.flag}</span>
           <span class="ticker-label">${item.label}</span>
-          <span class="ticker-title">${item.title.length > 80 ? item.title.slice(0, 80) + "…" : item.title}</span>
-        </a>
+          <span class="ticker-title">${item.title.length > 90 ? item.title.slice(0, 88) + "\u2026" : item.title}</span>
+        </span>
       `)
-      .join('<span class="ticker-sep">◆</span>');
+      .join('<span class="ticker-sep">\u25C6</span>');
 
-    // Set animation duration based on content width (approx)
-    const dur = Math.max(30, items.length * 12);
+    const dur = Math.max(30, items.length * 11);
     tickerTrack.style.animationDuration = `${dur}s`;
   }
 
-  async function load() {
-    // Check cache
-    try {
-      const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || "null");
-      if (cached && Date.now() - cached.ts < CACHE_TTL) {
-        renderItems(cached.items);
-        return;
-      }
-    } catch { /* ignore */ }
+  // Render immediately with static items — no network call needed
+  renderItems(buildFallbackItems());
 
-    // Fetch all subreddits in parallel
-    const results = await Promise.allSettled(SUBREDDITS.map(fetchSubreddit));
-    const items   = results.flatMap(r => r.status === "fulfilled" ? r.value : []);
-
-    if (items.length < 3) {
-      renderItems(buildFallbackItems());
-      return;
-    }
-
-    // Shuffle a bit
-    items.sort(() => Math.random() - 0.5);
-    renderItems(items);
-
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), items }));
-    } catch { /* quota */ }
-  }
-
-  window.TickerModule = { load, buildFallbackItems };
-  load();
+  window.TickerModule = { buildFallbackItems };
 })();
 
 

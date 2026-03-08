@@ -244,10 +244,21 @@
   const tooltip = document.getElementById("globe-tooltip");
 
   async function loadGeoJson() {
-    const res = await fetch(
-      "https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson"
-    );
-    return res.json();
+    // Try multiple mirror URLs in case one is down/rate-limited
+    const urls = [
+      "https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson",
+      "https://raw.githubusercontent.com/vasturiano/globe.gl/main/example/datasets/ne_110m_admin_0_countries.geojson",
+      "https://cdn.jsdelivr.net/gh/vasturiano/globe.gl@master/example/datasets/ne_110m_admin_0_countries.geojson",
+    ];
+    let lastErr;
+    for (const url of urls) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status} — ${url}`);
+        return await res.json();
+      } catch (e) { lastErr = e; }
+    }
+    throw lastErr || new Error("All GeoJSON sources failed");
   }
 
   function enrichGeoJson(gj) {
@@ -337,10 +348,10 @@
 
     globeInstance = Globe({ animateIn: true })(document.getElementById("globe-container"))
       .globeImageUrl(
-        "https://unpkg.com/three-globe/example/img/earth-night.jpg"
+        "https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-night.jpg"
       )
       .bumpImageUrl(
-        "https://unpkg.com/three-globe/example/img/earth-topology.png"
+        "https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-topology.png"
       )
       .atmosphereColor("#22D3EE")
       .atmosphereAltitude(0.18)
@@ -430,7 +441,7 @@
           _gfBaseLng = pov.lng  || 0;
           _gfAlt     = pov.altitude || 1.6;
           _zoomLock  = false;
-          window.PanelModule.open(iso2, data);
+          window.PanelModule?.open(iso2, data);
         }, 1250);
       });
 

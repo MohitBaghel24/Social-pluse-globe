@@ -45,7 +45,7 @@
       `<span class="total-num">${data.totalUsers.toLocaleString()}M</span><br/><span class="total-label">Total Social Media Users</span>`;
 
     // Bar chart
-    buildChart(data.platforms);
+    try { buildChart(data.platforms); } catch(e) { console.warn('[Panel] chart error:', e); }
 
     // Trending pills
     const pills = document.getElementById("panel-trending");

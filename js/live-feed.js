@@ -1,7 +1,6 @@
 // ============================================================
 //  Social Pulse Globe — Live Feed Panel
-//  Enterprise design: replaces bottom ticker with a sleek
-//  fade-in feed panel (bottom-right, glassmorphism).
+//  Glassmorphism feed panel (bottom-right). No external APIs.
 // ============================================================
 
 (function initLiveFeed() {
@@ -18,13 +17,7 @@
     { text: 'LinkedIn Premium AI coaching reaches 50M paid subscribers globally',             time: '11m ago'  },
   ];
 
-  // ── Live headlines pulled from Reddit ────────────────────────────
-  const SUBREDDITS = [
-    { sub: 'worldnews',  label: '🌍' },
-    { sub: 'technology', label: '💻' },
-    { sub: 'science',    label: '🔬' },
-  ];
-
+  // ── Live headlines pulled from a static rotating pool ────────────
   let totalCount = 0;
 
   function createItem(text, time, animate = true) {
@@ -69,42 +62,37 @@
   });
   updateCount();
 
-  // ── Fetch live headlines from Reddit ──────────────────────────────
-  async function fetchRedditHeadlines() {
-    try {
-      const src = SUBREDDITS[Math.floor(Math.random() * SUBREDDITS.length)];
-      const res  = await fetch(`https://www.reddit.com/r/${src.sub}/hot.json?limit=10`, {
-        headers: { Accept: 'application/json' },
-      });
-      if (!res.ok) return [];
-      const json = await res.json();
-      return json.data.children
-        .map(c => c.data)
-        .filter(p => !p.stickied && p.title && p.title.length > 20)
-        .slice(0, 3)
-        .map(p => `${src.label} ${p.title}`);
-    } catch {
-      return [];
-    }
-  }
-
-  // ── Periodic live updates ─────────────────────────────────────────
-  let redditQueue = [];
-
-  async function refreshQueue() {
-    const headlines = await fetchRedditHeadlines();
-    if (headlines.length) redditQueue = headlines;
-  }
+  // ── Rotating static news pool (no external API calls) ─────────────
+  const ROLLING_POOL = [
+    'TikTok Shop surpasses $500B GMV in South-East Asia — Q1 2026 report',
+    'Meta AI model now powers 40% of ad targeting on Facebook & Instagram',
+    'X (Twitter) daily active monetisable users up 22% YoY — Musk memo',
+    'YouTube expands 4K HDR Shorts to creators in 50 new markets',
+    'WhatsApp Business premium tier hits 200M paying SME subscribers',
+    'Snap AR glasses OS boots independently — dev preview released today',
+    'Pinterest introduces shoppable AR try-on for fashion & beauty brands',
+    'LinkedIn time-on-app grows 34% driven by AI career coaching feature',
+    'WeChat introduces blockchain identity wallet for Chinese nationals',
+    'Telegram opens P2P ad network to all public channels with >1k subs',
+    'BeReal acquired by tech conglomerate — pivots to social aggregator',
+    'Discord launches Clips — short-form highlight reels for gaming content',
+    'Twitch introduces AI-generated highlights for past broadcast clips',
+    'Reddit IPO stock up 18% after record Q4 2025 ad revenue beat',
+    'Threads reaches 250M MAU — Meta confirms cross-posting with Instagram',
+    'ByteDance files for secondary listing on Hong Kong exchange — sources',
+    'Amazon acquires short-video startup Flip for $800M — WSJ',
+    'Signal announces paid Premium tier for power-user features',
+    'Global social media ad spend to reach $395B in 2026 — GroupM forecast',
+    'Apple rolls out ActivityPub support in Messages — open social push begins',
+  ];
+  let poolIdx = 0;
 
   function pushLiveItem() {
-    if (redditQueue.length > 0) {
-      const text = redditQueue.shift();
-      prependItem(text, 'just now');
-    }
+    const text = ROLLING_POOL[poolIdx % ROLLING_POOL.length];
+    poolIdx++;
+    prependItem(text, 'just now');
   }
 
-  // Initial fetch then drip one item every ~8 seconds
-  refreshQueue();
+  // Drip one item every ~8 seconds
   setInterval(pushLiveItem, 8000);
-  setInterval(refreshQueue, 5 * 60 * 1000); // refresh pool every 5 min
 })();

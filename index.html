@@ -3,14 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Social Globe — Real-Time Social Media World Map</title>
-  <meta name="description" content="Interactive 3D world map showing real-time social media usage statistics by country" />
+  <title>Social Globe — Real-Time 3D Social Media World Map</title>
+  <meta name="description" content="Explore real-time social media usage across 50+ countries on an interactive 3D globe. Visualise Facebook, YouTube, TikTok, WhatsApp dominance country-by-country." />
+  <meta name="keywords" content="social media map, world social media, interactive globe, social media statistics, country social media usage" />
+  <meta property="og:title" content="Social Globe — Real-Time 3D Social Media World Map" />
+  <meta property="og:description" content="Interactive 3D globe showing social media usage statistics by country — Facebook, YouTube, TikTok, WhatsApp and more." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Social Globe" />
+  <meta name="twitter:description" content="Real-time 3D world map of social media dominance." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
-  <script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
-  <script src="https://unpkg.com/globe.gl@2.27.2/dist/globe.gl.min.js"></script>
+  <!-- globe.gl bundles Three.js internally — no separate three.min.js needed -->
+  <script src="https://cdn.jsdelivr.net/npm/globe.gl@2.27.2/dist/globe.gl.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -152,7 +159,13 @@
   <div id="vt-list" class="vt-list"></div>
 </div>
 <div id="vt-arc-popup" class="vt-arc-popup" aria-hidden="true"></div>
-<!-- ticker removed — replaced by Live Feed panel -->
+<!-- ── Ticker bar ── -->
+<div id="ticker-bar" aria-label="Trending news ticker">
+  <span class="ticker-header">◆ LIVE</span>
+  <div class="ticker-viewport">
+    <div id="ticker-track"></div>
+  </div>
+</div>
 <div id="toast" role="status" aria-live="polite"></div>
   <script src="js/data.js"></script>
   <script src="js/stars.js"></script>
@@ -200,6 +213,37 @@
     document.getElementById('live-indicator')?.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ') this.click();
     });
+
+    // ── Geolocation: auto-highlight user's country ──────────────────
+    (function initGeolocation() {
+      // Use ipapi.co — free, CORS-enabled, no key required
+      fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(4000) })
+        .then(r => r.ok ? r.json() : null)
+        .then(json => {
+          if (!json || !json.country_code) return;
+          const iso2 = json.country_code.toUpperCase();
+          const data = window.SocialData?.SOCIAL_DATA?.[iso2];
+          if (!data) return;
+          // Show a subtle "Your Location" beacon on the globe
+          const countryName = data.name;
+          const banner = document.createElement('div');
+          banner.id = 'geo-banner';
+          banner.innerHTML = `<span class="geo-dot"></span>\uD83D\uDCCD Your country: <strong>${countryName}</strong> — <button id="geo-open-btn">View Stats</button>`;
+          document.body.appendChild(banner);
+          document.getElementById('geo-open-btn')?.addEventListener('click', () => {
+            banner.style.display = 'none';
+            // Wait for globe to be ready then open panel
+            function tryOpen() {
+              if (window.PanelModule) { window.PanelModule.open(iso2, data); }
+              else { setTimeout(tryOpen, 500); }
+            }
+            tryOpen();
+          });
+          // Auto-dismiss after 12 s
+          setTimeout(() => banner?.remove(), 12000);
+        })
+        .catch(() => { /* silently ignore — just a nice-to-have feature */ });
+    })();
   </script>
 
 <!-- ── Live Feed Panel ─────────────────────────── -->

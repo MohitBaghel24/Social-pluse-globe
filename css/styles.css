@@ -2964,7 +2964,7 @@ body.war-room-active #ticker-bar { display: none !important; }
   /* Platform toolbar: shift to bottom-center so it doesn't cover the globe */
   #platform-toolbar {
     top: auto !important;
-    bottom: 50px;       /* above the ticker */
+    bottom: 52px;       /* above the 44px ticker */
     left: 50%;
     transform: translateX(-50%);
     flex-wrap: wrap;
@@ -3421,9 +3421,9 @@ header button:hover,
 .kf-entry:hover { background: var(--glass-hover) !important; }
 .kf-entry strong { color: var(--cyan) !important; }
 
-/* ── TICKER — removed ───────────────────────────────── */
+/* ── TICKER — re-enabled ────────────────────────────── */
 #ticker-bar {
-  display: none !important;
+  /* visible — override removed */
 }
 
 /* ── Viral Tracker panel ────────────────────────────── */
@@ -3481,6 +3481,11 @@ header button:hover,
 .war-room-overlay {
   background: rgba(8,14,28,0.98) !important;
   backdrop-filter: blur(20px) !important;
+}
+/* Full-width on mobile */
+@media (max-width: 768px) {
+  .war-room-overlay { width: 100vw !important; right: -100vw !important; }
+  .war-room-overlay.open { right: 0 !important; }
 }
 .wr-dashboard {
   background: rgba(15,23,42,0.9) !important;
@@ -3698,9 +3703,12 @@ header button:hover,
 
 /* ── Responsive ─────────────────────────────────────── */
 @media (max-width: 768px) {
-  #live-feed-panel { width: calc(100vw - 32px); right: 16px; bottom: 90px; }
+  /* Live feed: full width on tablet, shifted above ticker */
+  #live-feed-panel { width: calc(100vw - 32px); right: 16px; bottom: 56px; }
   #stats-bar { flex-direction: column; gap: 6px; }
   .stat-card { padding: 8px 12px; }
+  /* Side panel: full width on tablet */
+  #side-panel { width: 100% !important; }
 }
 @media (max-width: 480px) {
   /* hide live feed on small phones — too little room */
@@ -3722,3 +3730,53 @@ header button:hover,
   70%  { box-shadow: 0 0 0 14px rgba(34,211,238,0); }
   100% { box-shadow: 0 0 0 0 rgba(34,211,238,0); }
 }
+
+/* ── Geolocation banner ─────────────────────────────── */
+#geo-banner {
+  position: fixed;
+  bottom: 54px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background: rgba(10, 20, 45, 0.92);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  border-radius: 30px;
+  backdrop-filter: blur(16px);
+  font-size: 0.82rem;
+  color: var(--text);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(34,211,238,0.1);
+  white-space: nowrap;
+  animation: geoBannerIn 0.4s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes geoBannerIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.geo-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+  animation: geoDotPulse 1.4s ease-in-out infinite alternate;
+}
+@keyframes geoDotPulse {
+  from { opacity: 0.5; transform: scale(0.8); }
+  to   { opacity: 1;   transform: scale(1.2); }
+}
+#geo-open-btn {
+  background: rgba(34,211,238,0.15);
+  border: 1px solid rgba(34,211,238,0.4);
+  border-radius: 20px;
+  padding: 3px 12px;
+  color: var(--cyan);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#geo-open-btn:hover { background: rgba(34,211,238,0.28); }
