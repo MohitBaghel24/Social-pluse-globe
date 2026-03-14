@@ -4171,15 +4171,28 @@ header { overflow: hidden !important; }
     flex-shrink: 0 !important;
   }
 
-  /* Stats bar: smaller on tablet */
+  /* Stats bar: compact on mobile, no blank space */
   #stats-bar {
     left: 8px !important;
     top: 62px !important;
-    gap: 6px !important;
+    gap: 4px !important;
     transform: none !important;
+    flex-wrap: wrap !important;
   }
-  .stat-card { min-width: 90px !important; padding: 7px 10px !important; }
-  .stat-value { font-size: 14px !important; }
+  .stat-card { 
+    min-width: 75px !important;
+    max-width: 85px !important;
+    padding: 5px 8px !important;
+    flex-shrink: 1 !important;
+  }
+  .stat-card .val {
+    font-size: clamp(12px, 2.5vw, 14px) !important;
+  }
+  .stat-card .lbl {
+    font-size: clamp(10px, 2vw, 12px) !important;
+    margin-top: 1px !important;
+  }
+  .stat-value { font-size: 12px !important; }
 
   /* ─── Dock pill ─── */
   .dock-wrap {
@@ -4393,38 +4406,56 @@ header { overflow: hidden !important; }
   }
 
   .panel-body {
-    padding: 12px 14px 18px !important;
-    gap: 14px !important;
+    padding: 10px 12px 14px !important;
+    gap: 10px !important;
   }
 
   .chart-wrapper {
-    height: 170px !important;
+    height: 140px !important;
   }
 
   #panel-total {
-    padding: 10px !important;
+    padding: 8px !important;
   }
 
   .total-num {
-    font-size: 1.55rem !important;
-    line-height: 1.15 !important;
+    font-size: 1.35rem !important;
+    line-height: 1.1 !important;
   }
 
   .total-label {
-    font-size: 0.62rem !important;
+    font-size: 0.6rem !important;
   }
 
   #ai-insight-section {
-    padding-top: 10px !important;
-    margin-top: 2px !important;
+    padding: 8px 0 0 0 !important;
+    margin: 0 !important;
+    border-top: 1px solid rgba(0,245,255,0.06) !important;
   }
 
   #ai-insight-body,
   .ai-insight-text {
-    font-size: 0.78rem !important;
-    line-height: 1.5 !important;
+    font-size: clamp(11px, 2.8vw, 13px) !important;
+    line-height: 1.4 !important;
     word-break: break-word !important;
     overflow-wrap: anywhere !important;
+  }
+
+  .ai-skeleton {
+    gap: 4px !important;
+  }
+
+  .ai-skel-line {
+    height: 8px !important;
+  }
+
+  .ai-insight-title {
+    gap: 5px !important;
+  }
+
+  .ai-badge {
+    font-size: clamp(9px, 1.5vw, 11px) !important;
+    padding: 1px 5px !important;
   }
 }
 
