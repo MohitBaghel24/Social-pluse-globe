@@ -460,7 +460,108 @@ body.hover-active #cur-ring{width:44px;height:44px}
 
 /* Interactive hover class */
 button,a,.plat-btn,.trend-item,.tick-item{outline:none}
-</style>
+
+/* ════════════════════════════════════════════════
+   MOBILE RESPONSIVE
+════════════════════════════════════════════════ */
+@media (hover: none) {
+  html, body { cursor: auto !important; }
+  #cur-dot, #cur-ring { display: none !important; }
+}
+
+@media (max-width: 768px) {
+  #app {
+    grid-template-rows: 54px 1fr 40px;
+    grid-template-columns: 1fr;
+  }
+
+  #left-panel  { display: none; }
+  #right-panel { display: none; }
+  #center      { grid-column: 1; grid-row: 2; }
+  #ticker      { grid-column: 1; grid-row: 3; }
+
+  #header {
+    padding: 0 14px;
+    gap: 8px;
+  }
+
+  .hdr-center { display: none; }
+  .logo-sub { display: none; }
+  #live-clock { font-size: .6rem; letter-spacing: .1em; }
+  #kill-feed { display: none; }
+
+  #war-btn {
+    bottom: 56px;
+    font-size: .55rem;
+    padding: 6px 14px;
+    letter-spacing: .1em;
+  }
+
+  #globe-label { top: 10px; }
+  #globe-usercount { font-size: 1.4rem; }
+  #globe-sublabel { font-size: .5rem; }
+
+  #mobile-sheet {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 62vh;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    z-index: 100;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.22,1,0.36,1);
+    backdrop-filter: blur(20px);
+    padding: 0 0 32px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.1) transparent;
+  }
+
+  #mobile-sheet.open { transform: translateY(0); }
+
+  #sheet-handle {
+    width: 36px; height: 4px;
+    background: rgba(255,255,255,.2);
+    border-radius: 2px;
+    margin: 12px auto 16px;
+  }
+
+  #sheet-body {
+    padding: 0 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  #sheet-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+    background: rgba(0,0,0,.4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .3s;
+  }
+  #sheet-overlay.show {
+    opacity: 1;
+    pointer-events: all;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-text { font-size: 13px; }
+  .logo-mark  { width: 26px; height: 26px; font-size: 11px; }
+  #live-clock { display: none; }
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  @media (max-width: 768px) {
+    #mobile-sheet {
+      padding-bottom: calc(32px + env(safe-area-inset-bottom));
+    }
+  }
+}
 </head>
 <body>
 
@@ -1172,11 +1273,113 @@ function loadCountry(country) {
       ul.textContent = country.users + 'M';
       ul.style.color = '#ffffff';
       setTimeout(() => { ul.style.color = ''; ul.style.transition = 'color .5s'; }, 300);
+      // Open mobile sheet on mobile devices
+      if (window.matchMedia('(max-width: 768px)').matches) {
+        openMobileSheet(country);
+      }
     }
   }
 
-  // ── Resize ────────────────────────────────────────────────────────
-  function resize() {
+  // ── Mobile Sheet Guard ────────────────────────────────────────────
+  if (window.matchMedia('(hover: none)').matches) {
+    // Touch device — skip custom cursor
+  } else {
+    // Desktop — cursor already initialized
+  }
+
+  // ── Mobile Sheet Initialization ────────────────────────────────────
+  (function initMobileSheet() {
+    const sheet = document.createElement('div');
+    sheet.id = 'mobile-sheet';
+    sheet.innerHTML = `
+      <div id="sheet-handle"></div>
+      <div id="sheet-body">
+        <div id="sheet-country-card" style="display:flex;align-items:flex-start;gap:14px">
+          <div id="sheet-flag" style="font-size:2rem;line-height:1;flex-shrink:0">🌐</div>
+          <div style="flex:1;min-width:0">
+            <div id="sheet-name" style="font-family:var(--ff-display);font-size:1rem;font-weight:700;margin-bottom:2px"></div>
+            <div id="sheet-region" style="font-family:var(--ff-mono);font-size:.56rem;color:var(--muted);letter-spacing:.22em;text-transform:uppercase"></div>
+            <div id="sheet-users" style="font-family:var(--ff-display);font-size:1.5rem;font-weight:800;color:var(--gold);margin-top:6px"></div>
+            <div style="font-family:var(--ff-mono);font-size:.5rem;color:var(--muted);letter-spacing:.2em;text-transform:uppercase">Total Social Users</div>
+          </div>
+        </div>
+        <div>
+          <div class="section-label" style="margin-bottom:10px">Platform Breakdown</div>
+          <div id="sheet-bars"></div>
+        </div>
+        <div>
+          <div class="section-label" style="margin-bottom:8px">AI Insight</div>
+          <div id="sheet-insight" style="font-family:var(--ff-display);font-size:.76rem;font-weight:300;line-height:1.6;color:rgba(232,238,255,.75)"></div>
+        </div>
+        <div>
+          <div class="section-label" style="margin-bottom:8px">Trending</div>
+          <div id="sheet-trending" style="display:flex;flex-direction:column;gap:4px"></div>
+        </div>
+      </div>`;
+    document.body.appendChild(sheet);
+
+    const overlay = document.createElement('div');
+    overlay.id = 'sheet-overlay';
+    document.body.appendChild(overlay);
+
+    overlay.addEventListener('click', closeMobileSheet);
+    sheet.querySelector('#sheet-handle').addEventListener('click', closeMobileSheet);
+
+    let startY = 0;
+    sheet.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, {passive:true});
+    sheet.addEventListener('touchend', e => {
+      if (e.changedTouches[0].clientY - startY > 60) closeMobileSheet();
+    }, {passive:true});
+  })();
+
+  function openMobileSheet(country) {
+    qs('#sheet-flag').textContent = country.flag;
+    qs('#sheet-name').textContent = country.name;
+    qs('#sheet-region').textContent = country.region;
+    qs('#sheet-users').textContent = country.users + 'M';
+    qs('#sheet-insight').textContent = country.insight || 'No insight available';
+
+    const bars = qs('#sheet-bars');
+    bars.innerHTML = '';
+    bars.style.cssText = 'display:flex;flex-direction:column;gap:7px';
+    const plats = PLATFORMS.map(p => ({p, val: country.platforms[p.id]||0}))
+      .filter(x => x.val > 0).sort((a,b) => b.val - a.val);
+    const max = plats[0]?.val || 1;
+    plats.forEach(({p, val}) => {
+      const pct = Math.round(val / max * 100);
+      const row = document.createElement('div');
+      row.className = 'bar-row';
+      row.innerHTML = `
+        <div class="bar-plat-icon" style="inline-size:20px;flex-shrink:0">` + p.icon + `</div>
+        <div class="bar-plat-name" style="width:50px;font-size:.56rem">` + p.name + `</div>
+        <div class="bar-track" style="flex:1;height:5px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden"><div class="bar-fill" style="width:0%;height:100%;background:var(--gold);transition:width 0.6s ease" data-w="` + pct + `"></div></div>
+        <div class="bar-val" style="width:40px;text-align:right;font-size:.56rem">` + val + 'M' + `</div>`;
+      bars.appendChild(row);
+    });
+    setTimeout(() => {
+      bars.querySelectorAll('.bar-fill').forEach(b => { b.style.width = b.dataset.w + '%'; });
+    }, 60);
+
+    const trending = qs('#sheet-trending');
+    trending.innerHTML = country.trending.slice(0,6).map((t,i) => `
+      <a href="https://www.google.com/search?q=${encodeURIComponent(t)}"
+         target="_blank" rel="noopener" class="trend-item"
+         style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;text-decoration:none;transition:background .2s;font-size:.7rem">
+        <div style="font-family:var(--ff-mono);font-weight:700;color:var(--gold);width:20px">` + (i+1) + `</div>
+        <div style="flex:1;min-width:0;color:var(--text)" class="trend-text">` + t + `</div>
+        <div style="font-family:var(--ff-mono);font-size:.5rem;color:var(--muted);letter-spacing:.1em" class="trend-tag">TRENDING</div>
+      </a>`).join('');
+
+    qs('#mobile-sheet').classList.add('open');
+    qs('#sheet-overlay').classList.add('show');
+  }
+
+  function closeMobileSheet() {
+    qs('#mobile-sheet').classList.remove('open');
+    qs('#sheet-overlay').classList.remove('show');
+  }
+
+
     const w = center.clientWidth, h = center.clientHeight;
     renderer.setSize(w, h);
     camera.aspect = w / h;
@@ -1184,6 +1387,8 @@ function loadCountry(country) {
   }
   resize();
   window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', () => setTimeout(resize, 300));
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 
   // ── Animation Loop ────────────────────────────────────────────────
   const clock = new THREE.Clock();
