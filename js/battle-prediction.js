@@ -311,6 +311,7 @@
   // ── Run prediction ─────────────────────────────────────────────────
   async function runPrediction() {
     const status = document.getElementById("bp-status");
+    if (!status) return; // Status display required
     const keyInput = document.getElementById("bp-key-input");
     if (keyInput) {
       const newKey = keyInput.value.trim();

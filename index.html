@@ -38,7 +38,7 @@
 </div>
 <canvas id="star-canvas" aria-hidden="true"></canvas>
 <div id="globe-container" role="img" aria-label="3D interactive globe showing social media usage by country"></div>
-<div id="globe-tooltip" role="tooltip"></div>
+<div id="globe-tooltip" role="tooltip" aria-label="Country information"></div>
 <div id="reticle" aria-hidden="true">
   <div class="ret-corner ret-tl"></div>
   <div class="ret-corner ret-tr"></div>
@@ -121,7 +121,7 @@
 <div id="bp-panel" class="bp-panel" aria-hidden="true">
   <div class="bp-panel-header"><span class="bp-panel-title">🔮 NEXT BATTLE PREDICTION</span><button id="bp-close-btn" class="bp-panel-close">✕</button></div>
   <div class="bp-key-row"><input id="bp-key-input" class="bp-key-input" type="password" placeholder="Claude API key (optional — leave blank for local AI)" autocomplete="off"><button id="bp-run-btn" class="bp-run-btn">⚡ ANALYZE</button></div>
-  <div id="bp-status" class="bp-status" style="display:none"></div>
+  <div id="bp-status" class="bp-status"></div>
   <div id="bp-cards" class="bp-cards"></div>
 </div>
 <div class="dock-wrap">
@@ -176,7 +176,7 @@
   <div id="tab-buzz" class="panel-tab-pane">
     <div class="tab-section-hdr">🔍 Trending Searches</div>
     <div id="buzz-pills" class="buzz-pills"></div>
-    <div class="tab-section-hdr" style="margin-top:14px">📈 Search Surge (Sparklines)</div>
+    <div class="tab-section-hdr buzz-surge-hdr">📈 Search Surge (Sparklines)</div>
     <div id="buzz-sparklines" class="buzz-sparklines"></div>
   </div>
   <div id="tab-platform" class="panel-tab-pane">

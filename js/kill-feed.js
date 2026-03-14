@@ -4,6 +4,19 @@
 // ============================================================
 
 (function () {
+  const ENABLE_KILL_FEED = false;
+
+  if (!ENABLE_KILL_FEED) {
+    const wrap = document.getElementById("kill-feed-wrap");
+    if (wrap) wrap.classList.remove("visible");
+    window.KillFeed = {
+      onWarAdvance() {},
+      show() {},
+      hide() {},
+    };
+    return;
+  }
+
   const { SOCIAL_DATA, PLATFORM_COLORS } = window.SocialData;
 
   // Platform icon map

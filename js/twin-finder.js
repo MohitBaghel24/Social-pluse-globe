@@ -10,8 +10,8 @@
       options: [
         { text: "Share it immediately to 3+ platforms", scores: { sharing: 3, binge: 2 } },
         { text: "Send it privately to one friend", scores: { privacy: 2, sharing: 1 } },
-        { text: "Watch it again, don't share", scores: { passive: 3, binge: 1 } },
-        { text: "Screenshot and move on", scores: { privacy: 3, passive: 2 } }
+        { text: "Watch it again, don't share", scores: { addiction: 2, binge: 1 } },
+        { text: "Screenshot and move on", scores: { privacy: 3, addiction: 1 } }
       ]
     },
     {
@@ -45,8 +45,8 @@
       q: "Your daily screen time is roughly...",
       options: [
         { text: "6+ hours", scores: { addiction: 3, binge: 3 } },
-        { text: "3-5 hours", scores: { binge: 2 } },
-        { text: "1-2 hours", scores: { passive: 2 } },
+        { text: "3-5 hours", scores: { addiction: 2, binge: 1 } },
+        { text: "1-2 hours", scores: { creation: 2 } },
         { text: "Under 1 hour", scores: { privacy: 3 } }
       ]
     }

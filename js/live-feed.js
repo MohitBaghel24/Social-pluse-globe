@@ -6,7 +6,7 @@
 (function initLiveFeed() {
   const container = document.getElementById('lf-items');
   const countEl   = document.getElementById('lf-count');
-  if (!container) return;
+  if (!container || !countEl) return; // Module requires both DOM elements
 
   // ── Static seed headlines (displayed instantly) ───────────────────
   const SEED_ITEMS = [

@@ -16,14 +16,19 @@
   overlay.addEventListener("click", close);
 
   function open(iso2, data) {
-    if (currentOpen === iso2) { close(); return; }
+    // Keep the panel open on repeated taps of the same country.
+    // This avoids accidental close/reopen flicker on mobile taps.
+    if (currentOpen === iso2) { return; }
     currentOpen = iso2;
 
     // Graceful fallback when no social data exists for this country
     if (!data) {
-      document.getElementById("panel-flag").src = `https://flagcdn.com/w80/${iso2.toLowerCase()}.png`;
-      document.getElementById("panel-flag").alt  = iso2;
-      document.getElementById("panel-country").textContent = iso2;
+      const flag = document.getElementById("panel-flag");
+      const country = document.getElementById("panel-country");
+      if (!flag || !country) return; // Critical DOM elements missing
+      flag.src = `https://flagcdn.com/w80/${iso2.toLowerCase()}.png`;
+      flag.alt  = iso2;
+      country.textContent = iso2;
       document.getElementById("panel-total").innerHTML =
         `<span class="total-label" style="color:var(--muted)">No social media data available for this region.</span>`;
       document.getElementById("panel-trending").innerHTML = "";

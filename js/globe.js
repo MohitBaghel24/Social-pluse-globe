@@ -380,21 +380,6 @@
         const data = feat.properties._data; // may be null for unconfigured countries
         const countryName = feat.properties._name || feat.properties.ADMIN || iso2 || "Unknown";
 
-        // Show at least the name in the tooltip even if no social data
-        if (!data) {
-          const tt = document.getElementById("globe-tooltip");
-          if (tt) {
-            tt.innerHTML = `<strong>${countryName}</strong><span>No data available</span>`;
-            tt.style.display = "flex";
-            if (evt) {
-              tt.style.left = Math.min(evt.clientX + 16, window.innerWidth - 210) + "px";
-              tt.style.top  = Math.max(evt.clientY - 30, 4) + "px";
-            }
-            setTimeout(() => { tt.style.display = "none"; }, 2000);
-          }
-          return;
-        }
-
         pauseRotation();
         tooltip.style.display = "none";
         _zoomLock = true;
@@ -448,11 +433,36 @@
     // Mouse tracker for tooltip
     document.getElementById("globe-container").addEventListener("mousemove", positionTooltip);
 
+    // ── Window resize listener: update renderer size and camera ──
+    function handleWindowResize() {
+      if (!globeInstance) return;
+      const renderer = globeInstance.renderer();
+      const camera = globeInstance.camera();
+      if (renderer && camera) {
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+      }
+    }
+    window.addEventListener("resize", handleWindowResize);
+
     // Controls — disable built-in autoRotate; our gfLoop handles it
-    globeInstance.controls().autoRotate = false;
-    globeInstance.controls().enableZoom = true;
-    globeInstance.controls().minDistance = 150;
-    globeInstance.controls().maxDistance = 700;
+    const controls = globeInstance.controls();
+    controls.autoRotate = false;
+    controls.enableZoom = true;
+    controls.minDistance = 150;
+    controls.maxDistance = 700;
+    
+    // ── Mobile touch controls setup ──
+    controls.touches = {
+      ONE: THREE.TOUCH.ROTATE,
+      TWO: THREE.TOUCH.DOLLY_PAN
+    };
+    
+    // Optional: disable zoom on mobile to prevent accidental zoom
+    if (window.innerWidth <= 768) {
+      controls.enableZoom = false;
+    }
 
     // Cinematic intro: start zoomed out
     _zoomLock = true;
@@ -469,10 +479,10 @@
     }, 400);
 
     // Pause mouse-tracking loop on user drag; resume 3 s after release
-    globeInstance.controls().addEventListener("start", () => {
+    controls.addEventListener("start", () => {
       autoRotating = false;
     });
-    globeInstance.controls().addEventListener("end", () => {
+    controls.addEventListener("end", () => {
       setTimeout(() => {
         if (!autoRotating) {
           // Sync base from current OrbitControls position
